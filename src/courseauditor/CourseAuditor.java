@@ -5,6 +5,7 @@
  */
 package courseauditor;
 
+import java.io.File;
 import java.io.IOException;
 import pageauditor.PageAuditor;
 
@@ -20,7 +21,19 @@ public class CourseAuditor {
      */
     public static void main(String[] args) throws IOException {
         PageAuditor test = new PageAuditor();
-        test.audit("test.html");
+        test.printHeader();
+        
+        File file = new File("Course Files");
+        File[] files = file.listFiles();
+        for (File f : files) {
+            if (f.exists()) {
+                String filename = f.getName();
+                String html = ".html";
+                if (filename.toLowerCase().contains(html.toLowerCase())){
+                    test.audit(f.getPath());
+                }
+            }
+        }
     }
     
 }

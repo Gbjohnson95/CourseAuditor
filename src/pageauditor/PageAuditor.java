@@ -27,19 +27,18 @@ public class PageAuditor {
         fname = filename;
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
-        System.out.println("HTML Title, File Name, BrainHoney Links, BrainHoney Images, Box Links");
         printMetrics();
         checkLinksAndImages();
-        //checkForBox();
-        //checkForDeprecatedTags();
+        checkBolds();
+        writeCSV("\n");
     }
 
     public void printMetrics() {
 
-        Element titleElement = doc.select("title").first();
-        String title = titleElement.text();
-        writeCSV(title);
-        writeCSV(fname);
+        Elements titleElement = doc.getElementsByTag("title");
+        String title = titleElement.first().text();
+        writeCSV(title + ",");
+        writeCSV(fname + ",");
     }
 
     public void checkLinksAndImages() {
@@ -61,6 +60,15 @@ public class PageAuditor {
                 bxlinksCounter++;
             }
         }
+        
+        int tgCounter = 0;
+        for (Element a : links) {
+            String target = a.attr("target");
+            String blank = "_blank";
+            if (!target.toLowerCase().contains(blank.toLowerCase())) {
+                tgCounter++;
+            }
+        }
 
         Elements images = body.getElementsByTag("img");
         int bhimgesCounter = 0;
@@ -72,25 +80,41 @@ public class PageAuditor {
             }
         }
 
-        writeCSV(bhlinksCounter + "");
-        writeCSV(bhimgesCounter + "");
-        writeCSV(bxlinksCounter + "");
+        writeCSV(bhlinksCounter + ",");
+        writeCSV(bhimgesCounter + ",");
+        writeCSV(tgCounter + ",");
+        writeCSV(bxlinksCounter + ",");
 
     }
 
-    public void checkForBox() {
-        Elements images = body.getElementsByTag("img");
-
-    }
-
-    public void checkForDeprecatedTags() {
-        // Looks for <acronym>, <applet>, <basefont>, <big>, <center>, <dir>,
-        // <font>, <frame>, <frameset>, <isindex>, <noframes>, <s>, <strike>, 
-        // <tt>, <u>.
+    public void checkBolds() {
+        Elements ps = body.getElementsByTag("p");
+        int bCounter = 0;
+        for (Element p : ps) {
+            String style = p.attr("style");
+            String bold = "bold";
+            if (style.toLowerCase().contains(bold.toLowerCase())) {
+                bCounter++;
+            }
+        }
+        
+        Elements spans = body.getElementsByTag("span");
+        for (Element span : spans) {
+            String spanStyle = spans.attr("style");
+            String bold = "bold";
+            if (spanStyle.toLowerCase().contains(bold.toLowerCase())) {
+                bCounter++;
+            }
+        }
+        writeCSV(bCounter + ", ");
     }
 
     public void writeCSV(String text) {
-        System.out.print(text + ",");
+        System.out.print(text);
+    }
+
+    public void printHeader() {
+        System.out.println("HTML Title,File Name,BH Links,BH Images,Bad Link Targets,Box Links,Bolds");
     }
 
 }
