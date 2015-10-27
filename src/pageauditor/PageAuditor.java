@@ -5,8 +5,7 @@
  */
 package pageauditor;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,6 +23,7 @@ public class PageAuditor {
 
     public void audit(String filename) throws IOException {
         File input = new File(filename);
+        PrintWriter writer = new PrintWriter("Course Report.csv", "UTF-8");
         fname = filename;
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
@@ -114,7 +114,13 @@ public class PageAuditor {
     }
 
     public void printHeader() {
+        
         System.out.println("HTML Title,File Name,BH Links,BH Images,Bad Link Targets,Box Links,Bolds");
     }
 
+    public void printCSV () throws FileNotFoundException, UnsupportedEncodingException {
+        
+
+        writer.close();
+    }
 }
