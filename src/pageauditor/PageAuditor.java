@@ -20,47 +20,77 @@ public class PageAuditor {
 
     Document doc;
     String fname;
+    Element body;
+
     public void audit(String filename) throws IOException {
         File input = new File(filename);
         fname = filename;
         doc = Jsoup.parse(input, "UTF-8");
+        body = doc.getElementsByTag("body").first();
+        System.out.println("HTML Title, File Name, BrainHoney Links, BrainHoney Images, Box Links");
         printMetrics();
-        checkForBrainHoney();
+        checkLinksAndImages();
         //checkForBox();
         //checkForDeprecatedTags();
     }
-    
-    private void printMetrics() {
+
+    public void printMetrics() {
+
         Element titleElement = doc.select("title").first();
         String title = titleElement.text();
-        writeToLog("The File Name is : " + fname);
-        writeToLog("The HTML Title is: " + title);
-        
+        writeCSV(title);
+        writeCSV(fname);
     }
 
-    private void checkForBrainHoney() {
-        Elements bhlinks = doc.body().getAllElements().select("a[href*='brainhoney']");
-        Elements bhimges = doc.select("img[src*='brainhoney']");
-        
-        
-        writeToLog("\t- There are " + doc.select("a[href*='brainhoney']").size() + " BrainHoney links in this document");
-        writeToLog("\t- There are " + doc.select("img[src*='brainhoney']").size() + " BrainHoney images in this document");
-        
-        
+    public void checkLinksAndImages() {
+        Elements links = body.getElementsByTag("a");
+        int bhlinksCounter = 0;
+        for (Element a : links) {
+            String href = a.attr("href");
+            String bh = "brainhoney";
+            if (href.toLowerCase().contains(bh.toLowerCase())) {
+                bhlinksCounter++;
+            }
+        }
+
+        int bxlinksCounter = 0;
+        for (Element a : links) {
+            String href = a.attr("href");
+            String bx = "box.com";
+            if (href.toLowerCase().contains(bx.toLowerCase())) {
+                bxlinksCounter++;
+            }
+        }
+
+        Elements images = body.getElementsByTag("img");
+        int bhimgesCounter = 0;
+        for (Element img : images) {
+            String src = img.attr("src");
+            String bh = "brainhoney";
+            if (src.toLowerCase().contains(bh.toLowerCase())) {
+                bhimgesCounter++;
+            }
+        }
+
+        writeCSV(bhlinksCounter + "");
+        writeCSV(bhimgesCounter + "");
+        writeCSV(bxlinksCounter + "");
+
     }
 
-    private void checkForBox() {
-        Elements bxlinks = doc.select("a[href*='box']");
+    public void checkForBox() {
+        Elements images = body.getElementsByTag("img");
+
     }
 
-    private void checkForDeprecatedTags() {
+    public void checkForDeprecatedTags() {
         // Looks for <acronym>, <applet>, <basefont>, <big>, <center>, <dir>,
         // <font>, <frame>, <frameset>, <isindex>, <noframes>, <s>, <strike>, 
         // <tt>, <u>.
     }
 
-    private void writeToLog(String text) {
-        System.out.println(text);
+    public void writeCSV(String text) {
+        System.out.print(text + ",");
     }
 
 }
