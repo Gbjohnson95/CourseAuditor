@@ -5,7 +5,8 @@
  */
 package pageauditor;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,22 +24,52 @@ public class PageAuditor {
 
     public void audit(String filename) throws IOException {
         File input = new File(filename);
-        PrintWriter writer = new PrintWriter("Course Report.csv", "UTF-8");
         fname = filename;
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
         printMetrics();
         checkLinksAndImages();
         checkBolds();
+        countDivsSpans();
+        checkHeaders();
         writeCSV("\n");
     }
 
     public void printMetrics() {
-
         Elements titleElement = doc.getElementsByTag("title");
         String title = titleElement.first().text();
         writeCSV(title + ",");
         writeCSV(fname + ",");
+    }
+
+    public void checkHeaders() {
+        Elements h1s = body.getElementsByTag("h1");
+        Elements h2s = body.getElementsByTag("h2");
+        Elements h3s = body.getElementsByTag("h3");
+        Elements h4s = body.getElementsByTag("h4");
+        Elements h5s = body.getElementsByTag("h5");
+        Elements h6s = body.getElementsByTag("h6");
+        String headers = "";
+        if (!h1s.isEmpty()) {
+            headers += "1";
+        }
+        if (!h2s.isEmpty()) {
+            headers += "2";
+        }
+        if (!h3s.isEmpty()) {
+            headers += "3";
+        }
+        if (!h4s.isEmpty()) {
+            headers += "4";
+        }
+        if (!h5s.isEmpty()) {
+            headers += "5";
+        }
+        if (!h6s.isEmpty()) {
+            headers += "6";
+        }
+        writeCSV(headers + ",");
+
     }
 
     public void checkLinksAndImages() {
@@ -60,7 +91,7 @@ public class PageAuditor {
                 bxlinksCounter++;
             }
         }
-        
+
         int tgCounter = 0;
         for (Element a : links) {
             String target = a.attr("target");
@@ -80,11 +111,43 @@ public class PageAuditor {
             }
         }
 
+        int imgCounter = 0;
+        for (Element img : images) {
+            String width = img.attr("width");
+            String p = "%";
+            if (!width.toLowerCase().contains(p.toLowerCase())) {
+                String src = img.attr("src");
+                String banner = "Banner";
+                if (!src.toLowerCase().contains(banner.toLowerCase())) {
+                    imgCounter++;
+                }
+
+            }
+        }
+
         writeCSV(bhlinksCounter + ",");
         writeCSV(bhimgesCounter + ",");
         writeCSV(tgCounter + ",");
         writeCSV(bxlinksCounter + ",");
+        writeCSV(imgCounter + ",");
 
+    }
+
+    public void countDivsSpans() {
+        Elements divs = body.getElementsByTag("div");
+        int divCounter = 0;
+        for (Element div : divs) {
+            if (!div.hasAttr("id")) {
+                divCounter++;
+            }
+        }
+        Elements spans = body.getElementsByTag("span");
+        int spanCounter = 0;
+        for (Element span : spans) {
+            spanCounter++;
+        }
+        writeCSV(divCounter + ",");
+        writeCSV(spanCounter + ",");
     }
 
     public void checkBolds() {
@@ -97,7 +160,7 @@ public class PageAuditor {
                 bCounter++;
             }
         }
-        
+
         Elements spans = body.getElementsByTag("span");
         for (Element span : spans) {
             String spanStyle = spans.attr("style");
@@ -106,7 +169,7 @@ public class PageAuditor {
                 bCounter++;
             }
         }
-        writeCSV(bCounter + ", ");
+        writeCSV(bCounter + ",");
     }
 
     public void writeCSV(String text) {
@@ -114,13 +177,8 @@ public class PageAuditor {
     }
 
     public void printHeader() {
-        
-        System.out.println("HTML Title,File Name,BH Links,BH Images,Bad Link Targets,Box Links,Bolds");
+
+        System.out.println("HTML Title,File Name,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order");
     }
 
-    public void printCSV () throws FileNotFoundException, UnsupportedEncodingException {
-        
-
-        writer.close();
-    }
 }
