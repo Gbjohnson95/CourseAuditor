@@ -13,8 +13,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
-
- @author gbjohnson
+ *
+ * @author gbjohnson
  */
 public class PageAuditor {
 
@@ -26,6 +26,7 @@ public class PageAuditor {
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
         fname = filename;
+        
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
         docTitle = dTitle;
@@ -35,14 +36,19 @@ public class PageAuditor {
         countDivsSpans();
         checkHeaders();
         writeCSV("\n");
-        
-        docTitle = docTitle.replace(",","");
+
+        docTitle = docTitle.replace(",", "");
     }
 
     public void printMetrics() {
         Elements titleElement = doc.getElementsByTag("title");
-        String title = titleElement.first().text();
-        title = title.replace(",","");
+        String title;
+        if (titleElement.isEmpty()) {
+            title = "ERROR: COULD NOT READ TITLE";
+        } else {
+            title = titleElement.first().text();
+        }
+        title = title.replace(",", "");
         writeCSV(docTitle + ",");
         writeCSV(title + ","); // HTML title
     }
@@ -73,7 +79,7 @@ public class PageAuditor {
         if (!h6s.isEmpty()) {
             headers += "6";
         }
-             
+
         writeCSV(headers + ",");
 
     }
