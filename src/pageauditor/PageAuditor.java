@@ -21,25 +21,30 @@ public class PageAuditor {
     Document doc;
     String fname;
     Element body;
+    String docTitle;
 
-    public void audit(String filename) throws IOException {
+    public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
         fname = filename;
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
+        docTitle = dTitle;
         printMetrics();
         checkLinksAndImages();
         checkBolds();
         countDivsSpans();
         checkHeaders();
         writeCSV("\n");
+        
+        docTitle = docTitle.replace(",","");
     }
 
     public void printMetrics() {
         Elements titleElement = doc.getElementsByTag("title");
         String title = titleElement.first().text();
-        writeCSV(title + ",");
-        writeCSV(fname + ",");
+        title = title.replace(",","");
+        writeCSV(docTitle + ",");
+        writeCSV(title + ","); // HTML title
     }
 
     public void checkHeaders() {
@@ -68,6 +73,7 @@ public class PageAuditor {
         if (!h6s.isEmpty()) {
             headers += "6";
         }
+             
         writeCSV(headers + ",");
 
     }
@@ -178,7 +184,7 @@ public class PageAuditor {
 
     public void printHeader() {
 
-        System.out.println("HTML Title,File Name,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order");
+        System.out.println("Title,HTML Title,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order");
     }
 
 }
