@@ -20,33 +20,38 @@ public class PageAuditor {
 
     Document doc;
     String fname;
+    String fpath;
     Element body;
     String docTitle;
+    String returnString;
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
         fname = filename;
-        
+        fpath = filename;
+        fpath = fpath.replace(",", "");
         doc = Jsoup.parse(input, "UTF-8");
         body = doc.getElementsByTag("body").first();
         docTitle = dTitle;
+        docTitle = docTitle.replace(",", "");
         printMetrics();
         checkLinksAndImages();
         checkBolds();
         countDivsSpans();
         checkHeaders();
+        printFPath();
         writeCSV("\n");
 
-        docTitle = docTitle.replace(",", "");
+        
     }
 
     public void printMetrics() {
-        Elements titleElement = doc.getElementsByTag("title");
+        Elements titleE = doc.select("title");
         String title;
-        if (titleElement.isEmpty()) {
+        if (titleE.isEmpty()) {
             title = "ERROR: COULD NOT READ TITLE";
         } else {
-            title = titleElement.first().text();
+            title = titleE.first().text();
         }
         title = title.replace(",", "");
         writeCSV(docTitle + ",");
@@ -79,9 +84,11 @@ public class PageAuditor {
         if (!h6s.isEmpty()) {
             headers += "6";
         }
-
         writeCSV(headers + ",");
-
+    }
+    
+    public void printFPath() {
+        writeCSV(fpath + ",");
     }
 
     public void checkLinksAndImages() {
@@ -189,8 +196,7 @@ public class PageAuditor {
     }
 
     public void printHeader() {
-
-        System.out.println("Title,HTML Title,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order");
+        System.out.println("Title,HTML Title,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order,Filepath,");
     }
-
 }
+

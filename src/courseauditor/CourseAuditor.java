@@ -27,22 +27,6 @@ public class CourseAuditor {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        //PageAuditor test = new PageAuditor();
-        //test.printHeader();
-
-        /*
-        File file = new File("Course Files");
-        File[] files = file.listFiles();
-        for (File f : files) {
-            if (f.exists()) {
-                String filename = f.getName();
-                String html = ".html";
-                if (filename.toLowerCase().contains(html.toLowerCase())) {
-                    test.audit(f.getPath());
-                }
-            }
-        }
-         */
         parseManifestAndRun();
     }
 
@@ -51,7 +35,8 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String title = "";
+
+        String title;
         PageAuditor audit = new PageAuditor();
         audit.printHeader();
         for (Element e : resources) {
@@ -59,21 +44,19 @@ public class CourseAuditor {
             if ("content".equals(type)) {
                 String ident = e.attr("identifier");
                 String fpath = e.attr("href");
-
                 for (Element d : items) {
                     if (d.hasAttr("identifierref")) {
                         String ident1 = d.attr("identifierref");
                         if (ident1.equals(ident)) {
-                            title = d.child(0).ownText();
-                            audit.audit(fpath, title);
+                            if (fpath.contains(".html")) {
+                                title = d.child(0).ownText();
+                                audit.audit(fpath, title);
+                            }
+
                         }
                     }
                 }
-                //System.out.println("Identifier: " + ident + " Type: " + type + " File Name: " + fpath + " Title: " + title);
-                
             }
-
         }
     }
-
 }
