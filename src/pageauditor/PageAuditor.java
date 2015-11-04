@@ -27,6 +27,23 @@ public class PageAuditor {
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
+        if (input.exists()) {
+            fname = filename;
+            fpath = filename;
+            fpath = fpath.replace(",", "");
+            doc = Jsoup.parse(input, "UTF-8");
+            body = doc.getElementsByTag("body").first();
+            docTitle = dTitle;
+            docTitle = docTitle.replace(",", "");
+            printMetrics();
+            checkLinksAndImages();
+            checkBolds();
+            countDivsSpans();
+            checkHeaders();
+            printFPath();
+            writeCSV("\n");
+        }
+        /*
         fname = filename;
         fpath = filename;
         fpath = fpath.replace(",", "");
@@ -41,8 +58,7 @@ public class PageAuditor {
         checkHeaders();
         printFPath();
         writeCSV("\n");
-
-        
+*/
     }
 
     public void printMetrics() {
@@ -86,7 +102,7 @@ public class PageAuditor {
         }
         writeCSV(headers + ",");
     }
-    
+
     public void printFPath() {
         writeCSV(fpath + ",");
     }
@@ -99,6 +115,16 @@ public class PageAuditor {
             String bh = "brainhoney";
             if (href.toLowerCase().contains(bh.toLowerCase())) {
                 bhlinksCounter++;
+            }
+        }
+
+        int emptyLinks = 0;
+        for (Element a : links) {
+            boolean noHref = a.attr("href").isEmpty();
+            boolean noLinkText = a.text().isEmpty();
+            boolean hasHref = a.hasAttr("href");
+            if (noHref == true || noLinkText == true || hasHref == false) {
+                emptyLinks++;
             }
         }
 
@@ -146,8 +172,10 @@ public class PageAuditor {
 
         writeCSV(bhlinksCounter + ",");
         writeCSV(bhimgesCounter + ",");
-        writeCSV(tgCounter + ",");
         writeCSV(bxlinksCounter + ",");
+        writeCSV(tgCounter + ",");
+
+        writeCSV(emptyLinks + ",");
         writeCSV(imgCounter + ",");
 
     }
@@ -193,10 +221,14 @@ public class PageAuditor {
 
     public void writeCSV(String text) {
         System.out.print(text);
+        writeString(text);
+    }
+
+    public void writeString(String text) {
+        returnString += text;
     }
 
     public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,BH Images,Bad Link Targets,Box Links,Image Width,Bolds,Divs,Spans,Header Order,Filepath,");
+        System.out.println("Title,HTML Title,BH Links,BH Images,Box Links,Bad Link Targets,Empty Links,Image Width,Bolds,Divs,Spans,Header Order,Filepath,");
     }
 }
-
