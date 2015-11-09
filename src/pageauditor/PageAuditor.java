@@ -20,6 +20,8 @@ public class PageAuditor {
 
     Document doc;
     Element body;
+    private String filepath;
+    private String docTitle;
     private Elements links;
     private Elements images;
     private Elements spans;
@@ -40,9 +42,11 @@ public class PageAuditor {
             divs = body.getElementsByTag("div");
             ps = body.getElementsByTag("p");
             titleE = doc.select("title");
+            docTitle = dTitle.replace(",", "");
+            filepath = filename.replace(",", "");
 
             // Write the line
-            writeCSV(dTitle.replace(",", "") + ",");   // Title
+            writeCSV(docTitle + ",");                  // Title
             writeCSV(getHTMLTitle() + ",");            // HTML Title
             writeCSV(numBHLinks() + ",");              // BH Links
             writeCSV(numBXLinks() + ",");              // BX Links
@@ -54,7 +58,7 @@ public class PageAuditor {
             writeCSV(numSpans() + ",");                // Spans
             writeCSV(numDivs() + ",");                 // Divs
             writeCSV(checkHeaders() + ",");            // Headers
-            writeCSV(filename.replace(",", "") + ","); // File Path
+            writeCSV(checkFilePath() + ","); // File Path
             writeCSV("\n");
         }
     }
@@ -62,13 +66,25 @@ public class PageAuditor {
     public void printHeader() {
         System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Header Order,Filepath,");
     }
+    
+    private String checkFilePath() {
+        if (filepath.contains("Course Files")) {
+            return "Good: " + filepath;
+        } else {
+            return "Bad: " + filepath;
+        }
+    }
 
     private String getHTMLTitle() {
-        String title;
         if (titleE.isEmpty()) {
             return "ERROR: COULD NOT READ TITLE";
         } else {
-            return titleE.first().text().replace(",", "");
+            String title = titleE.first().text().replace(",", "");
+            if (title == null ? docTitle == null : title.toLowerCase().equals(docTitle.toLowerCase())) {
+                return "Match!";
+            } else {
+              return "No Match: " + title;  
+            }
         }
     }
 
