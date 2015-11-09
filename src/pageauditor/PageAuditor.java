@@ -19,62 +19,106 @@ import org.jsoup.select.Elements;
 public class PageAuditor {
 
     Document doc;
-    String fname;
-    String fpath;
     Element body;
-    String docTitle;
-    String returnString;
+    private Elements links;
+    private Elements images;
+    private Elements spans;
+    private Elements divs;
+    private Elements ps;
+    private Elements titleE;
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
         if (input.exists()) {
-            fname = filename;
-            fpath = filename;
-            fpath = fpath.replace(",", "");
             doc = Jsoup.parse(input, "UTF-8");
             body = doc.getElementsByTag("body").first();
-            docTitle = dTitle;
-            docTitle = docTitle.replace(",", "");
-            printMetrics();
-            checkLinksAndImages();
-            checkBolds();
-            countDivsSpans();
-            checkHeaders();
-            printFPath();
+
+            // Set elements for program
+            links = body.getElementsByTag("a");
+            images = body.getElementsByTag("img");
+            spans = body.getElementsByTag("span");
+            divs = body.getElementsByTag("div");
+            ps = body.getElementsByTag("p");
+            titleE = doc.select("title");
+
+            // Write the line
+            writeCSV(dTitle.replace(",", "") + ",");   // Title
+            writeCSV(getHTMLTitle() + ",");            // HTML Title
+            writeCSV(numBHLinks() + ",");              // BH Links
+            writeCSV(numBXLinks() + ",");              // BX Links
+            writeCSV(numBadTargets() + ",");           // Bad Link Targets
+            writeCSV(numEmptyLinks() + ",");           // Empty Links
+            writeCSV(numBHImages() + ",");             // BH Images
+            writeCSV(numBadImageWidth() + ",");        // Bad Image Width
+            writeCSV(numBolds() + ",");                // Bolds
+            writeCSV(numSpans() + ",");                // Spans
+            writeCSV(numDivs() + ",");                 // Divs
+            writeCSV(checkHeaders() + ",");            // Headers
+            writeCSV(filename.replace(",", "") + ","); // File Path
             writeCSV("\n");
         }
-        /*
-        fname = filename;
-        fpath = filename;
-        fpath = fpath.replace(",", "");
-        doc = Jsoup.parse(input, "UTF-8");
-        body = doc.getElementsByTag("body").first();
-        docTitle = dTitle;
-        docTitle = docTitle.replace(",", "");
-        printMetrics();
-        checkLinksAndImages();
-        checkBolds();
-        countDivsSpans();
-        checkHeaders();
-        printFPath();
-        writeCSV("\n");
-*/
+    }
+    
+    public void printHeader() {
+        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Header Order,Filepath,");
     }
 
-    public void printMetrics() {
-        Elements titleE = doc.select("title");
+    private String getHTMLTitle() {
         String title;
         if (titleE.isEmpty()) {
-            title = "ERROR: COULD NOT READ TITLE";
+            return "ERROR: COULD NOT READ TITLE";
         } else {
-            title = titleE.first().text();
+            return titleE.first().text().replace(",", "");
         }
-        title = title.replace(",", "");
-        writeCSV(docTitle + ",");
-        writeCSV(title + ","); // HTML title
     }
 
-    public void checkHeaders() {
+    private int numBHLinks() {
+        int bhlinksCounter = 0;
+        for (Element a : links) {
+            String href = a.attr("href");
+            if (href.toLowerCase().contains("brainhoney")) {
+                bhlinksCounter++;
+            }
+        }
+        return bhlinksCounter;
+    }
+
+    private int numBHImages() {
+        int bhimgesCounter = 0;
+        for (Element img : images) {
+            String src = img.attr("src");
+            if (src.toLowerCase().contains("brainhoney")) {
+                bhimgesCounter++;
+            }
+        }
+        return bhimgesCounter;
+    }
+
+    private int numBXLinks() {
+        int bxlinksCounter = 0;
+        for (Element a : links) {
+            String href = a.attr("href");
+            if (href.toLowerCase().contains("box.com")) {
+                bxlinksCounter++;
+            }
+        }
+        return bxlinksCounter;
+    }
+
+    private int numEmptyLinks() {
+        int emptyLinks = 0;
+        for (Element a : links) {
+            boolean noHref = a.attr("href").isEmpty();
+            boolean noLinkText = a.text().isEmpty();
+            boolean hasHref = a.hasAttr("href");
+            if (noHref == true || noLinkText == true || hasHref == false) {
+                emptyLinks++;
+            }
+        }
+        return emptyLinks;
+    }
+
+    private String checkHeaders() {
         Elements h1s = body.getElementsByTag("h1");
         Elements h2s = body.getElementsByTag("h2");
         Elements h3s = body.getElementsByTag("h3");
@@ -100,43 +144,14 @@ public class PageAuditor {
         if (!h6s.isEmpty()) {
             headers += "6";
         }
-        writeCSV(headers + ",");
+        if ("123456".indexOf(headers) == 0) {
+            return "Good: " + headers;
+        } else {
+            return "Bad: " + headers;
+        }
     }
 
-    public void printFPath() {
-        writeCSV(fpath + ",");
-    }
-
-    public void checkLinksAndImages() {
-        Elements links = body.getElementsByTag("a");
-        int bhlinksCounter = 0;
-        for (Element a : links) {
-            String href = a.attr("href");
-            String bh = "brainhoney";
-            if (href.toLowerCase().contains(bh.toLowerCase())) {
-                bhlinksCounter++;
-            }
-        }
-
-        int emptyLinks = 0;
-        for (Element a : links) {
-            boolean noHref = a.attr("href").isEmpty();
-            boolean noLinkText = a.text().isEmpty();
-            boolean hasHref = a.hasAttr("href");
-            if (noHref == true || noLinkText == true || hasHref == false) {
-                emptyLinks++;
-            }
-        }
-
-        int bxlinksCounter = 0;
-        for (Element a : links) {
-            String href = a.attr("href");
-            String bx = "box.com";
-            if (href.toLowerCase().contains(bx.toLowerCase())) {
-                bxlinksCounter++;
-            }
-        }
-
+    private int numBadTargets() {
         int tgCounter = 0;
         for (Element a : links) {
             String target = a.attr("target");
@@ -145,90 +160,62 @@ public class PageAuditor {
                 tgCounter++;
             }
         }
+        return tgCounter;
+    }
 
-        Elements images = body.getElementsByTag("img");
-        int bhimgesCounter = 0;
-        for (Element img : images) {
-            String src = img.attr("src");
-            String bh = "brainhoney";
-            if (src.toLowerCase().contains(bh.toLowerCase())) {
-                bhimgesCounter++;
-            }
-        }
-
+    private int numBadImageWidth() {
         int imgCounter = 0;
         for (Element img : images) {
             String width = img.attr("width");
-            String p = "%";
-            if (!width.toLowerCase().contains(p.toLowerCase())) {
+            if (!width.toLowerCase().contains("%")) {
                 String src = img.attr("src");
-                String banner = "Banner";
-                if (!src.toLowerCase().contains(banner.toLowerCase())) {
+                if (!src.toLowerCase().contains("banner")) {
                     imgCounter++;
                 }
 
             }
         }
-
-        writeCSV(bhlinksCounter + ",");
-        writeCSV(bhimgesCounter + ",");
-        writeCSV(bxlinksCounter + ",");
-        writeCSV(tgCounter + ",");
-
-        writeCSV(emptyLinks + ",");
-        writeCSV(imgCounter + ",");
-
+        return imgCounter;
     }
 
-    public void countDivsSpans() {
-        Elements divs = body.getElementsByTag("div");
+    private int numSpans() {
+        int spanCounter = 0;
+        for (Element span : spans) {
+            spanCounter++;
+        }
+        return spanCounter;
+    }
+
+    private int numDivs() {
         int divCounter = 0;
         for (Element div : divs) {
             if (!div.hasAttr("id")) {
                 divCounter++;
             }
         }
-        Elements spans = body.getElementsByTag("span");
-        int spanCounter = 0;
-        for (Element span : spans) {
-            spanCounter++;
-        }
-        writeCSV(divCounter + ",");
-        writeCSV(spanCounter + ",");
+        return divCounter;
     }
 
-    public void checkBolds() {
-        Elements ps = body.getElementsByTag("p");
+    private int numBolds() {
         int bCounter = 0;
         for (Element p : ps) {
             String style = p.attr("style");
-            String bold = "bold";
-            if (style.toLowerCase().contains(bold.toLowerCase())) {
+            if (style.toLowerCase().contains("bold".toLowerCase())) {
                 bCounter++;
             }
         }
-
-        Elements spans = body.getElementsByTag("span");
         for (Element span : spans) {
             String spanStyle = spans.attr("style");
-            String bold = "bold";
-            if (spanStyle.toLowerCase().contains(bold.toLowerCase())) {
+            if (spanStyle.toLowerCase().contains("bold".toLowerCase())) {
                 bCounter++;
             }
         }
-        writeCSV(bCounter + ",");
+        return bCounter;
     }
 
     public void writeCSV(String text) {
         System.out.print(text);
-        writeString(text);
     }
 
-    public void writeString(String text) {
-        returnString += text;
-    }
-
-    public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,BH Images,Box Links,Bad Link Targets,Empty Links,Image Width,Bolds,Divs,Spans,Header Order,Filepath,");
-    }
+    
 }
