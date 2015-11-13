@@ -7,6 +7,7 @@ package pageauditor;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,6 +29,8 @@ public class PageAuditor {
     private Elements divs;
     private Elements ps;
     private Elements titleE;
+    private Elements brs;
+    private Element banner;
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
@@ -41,9 +44,12 @@ public class PageAuditor {
             spans = body.getElementsByTag("span");
             divs = body.getElementsByTag("div");
             ps = body.getElementsByTag("p");
+            brs = body.getElementsByTag("br");
             titleE = doc.select("title");
             docTitle = dTitle.replace(",", "");
+            docTitle = docTitle.replace(System.getProperty("line.separator"), "");
             filepath = filename.replace(",", "");
+            filepath = filepath.replace(System.getProperty("line.separator"), "");
 
             // Write the line
             writeCSV(docTitle + ",");                  // Title
@@ -57,16 +63,18 @@ public class PageAuditor {
             writeCSV(numBolds() + ",");                // Bolds
             writeCSV(numSpans() + ",");                // Spans
             writeCSV(numDivs() + ",");                 // Divs
+            writeCSV(numBrs() + ",");                  // Breaks
             writeCSV(checkHeaders() + ",");            // Headers
-            writeCSV(checkFilePath() + ","); // File Path
+            writeCSV(getTemplateName() + ",");         // Template name
+            writeCSV(checkFilePath() + ",");           // File Path
             writeCSV("\n");
         }
     }
-    
+
     public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Header Order,Filepath,");
+        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Br,Header Order,Template,Filepath,");
     }
-    
+
     private String checkFilePath() {
         if (filepath.contains("Course Files")) {
             return "Good: " + filepath;
@@ -80,12 +88,41 @@ public class PageAuditor {
             return "ERROR: COULD NOT READ TITLE";
         } else {
             String title = titleE.first().text().replace(",", "");
-            if (title == null ? docTitle == null : title.toLowerCase().equals(docTitle.toLowerCase())) {
+            if (title == null ? docTitle == null : title.toLowerCase().trim().equals(docTitle.trim().toLowerCase())) {
                 return "Match!";
             } else {
-              return "No Match: " + title;  
+                return "No Match: " + title;
             }
         }
+    }
+
+    private String getTemplateName() {
+        String returnString = "";
+        for (Element img : images) {
+            if (img.attr("alt").toLowerCase().contains("banner")) {
+                
+                if (img.attr("src").contains("largeBanner")) {
+                    returnString = "Large";
+                }
+                if (img.attr("src").contains("smallBanner")) {
+                    returnString = "Small";
+                }
+
+                
+            }
+        }
+        return returnString;
+    }
+
+    private int numBrs() {
+        int brCounters = 0;
+        return brs.size();
+    }
+    
+    private int countBHVars() {
+        String htmlString = doc.toString();
+        Pattern findvars = Pattern.compile("$(DOMAINID|DOMAINNAME|USERID|USERNAME|USERSPACE|USER|USERDISPLAY|USERFIRST|USERLAST|USERREFERENCE|ENROLLMENTID|ENROLLMENTFIRST|ENROLLMENTLAST|ENROLLMENTREFERENCE|ENROLLMENTUSER|ENROLLMENTUSERNAME|ENROLLMENTUSERREFERENCE|COURSEID|COURSENAME|COURSEREFERENCE|SECTIONIDCOURSENAME|SECTIONREFERENCE|ITEMID|ITEMNAME)(.*?)$");
+        return 0;
     }
 
     private int numBHLinks() {
@@ -135,33 +172,29 @@ public class PageAuditor {
     }
 
     private String checkHeaders() {
-        Elements h1s = body.getElementsByTag("h1");
-        Elements h2s = body.getElementsByTag("h2");
-        Elements h3s = body.getElementsByTag("h3");
-        Elements h4s = body.getElementsByTag("h4");
-        Elements h5s = body.getElementsByTag("h5");
-        Elements h6s = body.getElementsByTag("h6");
         String headers = "";
-        if (!h1s.isEmpty()) {
+        if (!body.getElementsByTag("h1").isEmpty()) {
             headers += "1";
         }
-        if (!h2s.isEmpty()) {
+        if (!body.getElementsByTag("h2").isEmpty()) {
             headers += "2";
         }
-        if (!h3s.isEmpty()) {
+        if (!body.getElementsByTag("h3").isEmpty()) {
             headers += "3";
         }
-        if (!h4s.isEmpty()) {
+        if (!body.getElementsByTag("h4").isEmpty()) {
             headers += "4";
         }
-        if (!h5s.isEmpty()) {
+        if (!body.getElementsByTag("h5").isEmpty()) {
             headers += "5";
         }
-        if (!h6s.isEmpty()) {
+        if (!body.getElementsByTag("h6").isEmpty()) {
             headers += "6";
         }
         if ("123456".indexOf(headers) == 0) {
             return "Good: " + headers;
+        } else if (headers == "") {
+            return "Bad: ";
         } else {
             return "Bad: " + headers;
         }
@@ -170,9 +203,7 @@ public class PageAuditor {
     private int numBadTargets() {
         int tgCounter = 0;
         for (Element a : links) {
-            String target = a.attr("target");
-            String blank = "_blank";
-            if (!target.toLowerCase().contains(blank.toLowerCase())) {
+            if (!a.attr("target").toLowerCase().contains("_blank".toLowerCase())) {
                 tgCounter++;
             }
         }
@@ -183,23 +214,15 @@ public class PageAuditor {
         int imgCounter = 0;
         for (Element img : images) {
             String width = img.attr("width");
-            if (!width.toLowerCase().contains("%")) {
-                String src = img.attr("src");
-                if (!src.toLowerCase().contains("banner")) {
-                    imgCounter++;
-                }
-
+            if (!width.toLowerCase().contains("%") && !img.attr("src").toLowerCase().contains("banner")) {
+                imgCounter++;
             }
         }
         return imgCounter;
     }
 
     private int numSpans() {
-        int spanCounter = 0;
-        for (Element span : spans) {
-            spanCounter++;
-        }
-        return spanCounter;
+        return spans.size();
     }
 
     private int numDivs() {
@@ -233,5 +256,4 @@ public class PageAuditor {
         System.out.print(text);
     }
 
-    
 }
