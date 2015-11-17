@@ -47,11 +47,9 @@ public class CourseAuditor {
                 for (Element d : items) {
                     if (d.hasAttr("identifierref")) {
                         String ident1 = d.attr("identifierref");
-                        if (ident1.equals(ident)) {
-                            if (fpath.contains(".html")) { // Only html gets passed to the html
-                                title = d.child(0).ownText();
-                                audit.audit(fpath, title);
-                            }
+                        if (ident1.equals(ident) && fpath.contains(".html")) { // Only html gets passed to the html
+                            title = d.child(0).ownText();
+                            audit.audit(fpath, title);
                         }
                     }
                 }
