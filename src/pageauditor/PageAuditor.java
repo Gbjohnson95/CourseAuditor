@@ -7,6 +7,7 @@ package pageauditor;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,8 +20,8 @@ import org.jsoup.select.Elements;
  */
 public class PageAuditor {
 
-    Document doc;
-    Element body;
+    private Document doc;
+    private Element body;
     private String filepath;
     private String docTitle;
     private Elements links;
@@ -31,6 +32,7 @@ public class PageAuditor {
     private Elements titleE;
     private Elements brs;
     private Element banner;
+    private String htmlString;
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
@@ -50,6 +52,7 @@ public class PageAuditor {
             docTitle = docTitle.replace(System.getProperty("line.separator"), "");
             filepath = filename.replace(",", "");
             filepath = filepath.replace(System.getProperty("line.separator"), "");
+            htmlString = doc.toString();
 
             // Write the line
             writeCSV(docTitle + ",");                  // Title
@@ -64,6 +67,8 @@ public class PageAuditor {
             writeCSV(numSpans() + ",");                // Spans
             writeCSV(numDivs() + ",");                 // Divs
             writeCSV(numBrs() + ",");                  // Breaks
+            writeCSV(countBHVars() + ",");             // Checks for BH variables
+            writeCSV(mentionsSaturday() + ",");        // Page mentions saturday
             writeCSV(checkHeaders() + ",");            // Headers
             writeCSV(getTemplateName() + ",");         // Template name
             writeCSV(checkFilePath() + ",");           // File Path
@@ -72,7 +77,7 @@ public class PageAuditor {
     }
 
     public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Br,Header Order,Template,Filepath,");
+        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath,");
     }
 
     private String checkFilePath() {
@@ -100,16 +105,23 @@ public class PageAuditor {
         String returnString = "";
         for (Element img : images) {
             if (img.attr("alt").toLowerCase().contains("banner")) {
-                
                 if (img.attr("src").contains("largeBanner")) {
                     returnString = "Large";
                 }
                 if (img.attr("src").contains("smallBanner")) {
                     returnString = "Small";
                 }
-
-                
             }
+        }
+        return returnString;
+    }
+    
+    private String mentionsSaturday() {
+        String returnString = "No";
+        Pattern dueSaturday = Pattern.compile("[sS]aturday");
+        Matcher m = dueSaturday.matcher(htmlString);
+        while (m.find()) {
+            returnString = "Yes";
         }
         return returnString;
     }
@@ -120,10 +132,16 @@ public class PageAuditor {
     }
     
     private int countBHVars() {
-        String htmlString = doc.toString();
-        Pattern findvars = Pattern.compile("$(DOMAINID|DOMAINNAME|USERID|USERNAME|USERSPACE|USER|USERDISPLAY|USERFIRST|USERLAST|USERREFERENCE|ENROLLMENTID|ENROLLMENTFIRST|ENROLLMENTLAST|ENROLLMENTREFERENCE|ENROLLMENTUSER|ENROLLMENTUSERNAME|ENROLLMENTUSERREFERENCE|COURSEID|COURSENAME|COURSEREFERENCE|SECTIONIDCOURSENAME|SECTIONREFERENCE|ITEMID|ITEMNAME)(.*?)$");
-        return 0;
+        int BHVarsCounter = 0;
+        Pattern findvars = Pattern.compile("\\$[A-Za-z]+\\S\\$");
+        Matcher m = findvars.matcher(htmlString);
+        while (m.find()) {
+            BHVarsCounter++;
+        }
+        return BHVarsCounter;
     }
+    
+    
 
     private int numBHLinks() {
         int bhlinksCounter = 0;
