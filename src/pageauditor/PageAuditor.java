@@ -25,6 +25,8 @@ public class PageAuditor {
     private String filepath;
     private String docTitle;
     private Elements links;
+    private Elements bs;
+    private Elements is;
     private Elements images;
     private Elements spans;
     private Elements divs;
@@ -45,16 +47,18 @@ public class PageAuditor {
             images = body.getElementsByTag("img");
             spans = body.getElementsByTag("span");
             divs = body.getElementsByTag("div");
+            is = body.getElementsByTag("i");
+            bs = body.getElementsByTag("b");
             ps = body.getElementsByTag("p");
             brs = body.getElementsByTag("br");
-            titleE = doc.select("title");
-            docTitle = dTitle.replace(",", "");
-            docTitle = docTitle.replace(System.getProperty("line.separator"), "");
-            filepath = filename.replace(",", "");
-            filepath = filepath.replace(System.getProperty("line.separator"), "");
             htmlString = doc.toString();
+            titleE = doc.select("title");
 
-            // Write the line
+            // Remove commas from the titles
+            docTitle = dTitle.replace(",", "");
+            filepath = filename.replace(",", "");
+
+            // Writes the line
             writeCSV(docTitle + ",");                  // Title
             writeCSV(getHTMLTitle() + ",");            // HTML Title
             writeCSV(numBHLinks() + ",");              // BH Links
@@ -65,6 +69,7 @@ public class PageAuditor {
             writeCSV(numBadImageWidth() + ",");        // Bad Image Width
             writeCSV(numBolds() + ",");                // Bolds
             writeCSV(numSpans() + ",");                // Spans
+            writeCSV(numBadTags() + ",");              // <b>/<i>
             writeCSV(numDivs() + ",");                 // Divs
             writeCSV(numBrs() + ",");                  // Breaks
             writeCSV(countBHVars() + ",");             // Checks for BH variables
@@ -76,8 +81,12 @@ public class PageAuditor {
         }
     }
 
+    /**
+     * Prints the table headers.
+     *
+     */
     public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath,");
+        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,Special Letters,BH Images,Image Width,Bolds,Spans,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath,");
     }
 
     private String checkFilePath() {
@@ -115,7 +124,7 @@ public class PageAuditor {
         }
         return returnString;
     }
-    
+
     private String mentionsSaturday() {
         String returnString = "No";
         Pattern dueSaturday = Pattern.compile("[sS]aturday");
@@ -130,7 +139,7 @@ public class PageAuditor {
         int brCounters = 0;
         return brs.size();
     }
-    
+
     private int countBHVars() {
         int BHVarsCounter = 0;
         Pattern findvars = Pattern.compile("\\$[A-Za-z]+\\S\\$");
@@ -140,8 +149,10 @@ public class PageAuditor {
         }
         return BHVarsCounter;
     }
-    
-    
+
+    private int numBadTags() {
+        return bs.size() + is.size();
+    }
 
     private int numBHLinks() {
         int bhlinksCounter = 0;
@@ -255,17 +266,10 @@ public class PageAuditor {
 
     private int numBolds() {
         int bCounter = 0;
-        for (Element p : ps) {
-            String style = p.attr("style");
-            if (style.toLowerCase().contains("bold".toLowerCase())) {
-                bCounter++;
-            }
-        }
-        for (Element span : spans) {
-            String spanStyle = spans.attr("style");
-            if (spanStyle.toLowerCase().contains("bold".toLowerCase())) {
-                bCounter++;
-            }
+        Pattern dueSaturday = Pattern.compile("font-weight\\: bold");
+        Matcher m = dueSaturday.matcher(htmlString);
+        while (m.find()) {
+            bCounter++;
         }
         return bCounter;
     }
@@ -273,5 +277,4 @@ public class PageAuditor {
     public void writeCSV(String text) {
         System.out.print(text);
     }
-
 }
