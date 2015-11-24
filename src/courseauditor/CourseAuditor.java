@@ -5,8 +5,7 @@
  */
 package courseauditor;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Scanner;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,10 +34,9 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-
+        String printString = "Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
         String title;
         PageAuditor audit = new PageAuditor();
-        audit.printHeader();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
             if ("content".equals(type)) {
@@ -50,10 +48,14 @@ public class CourseAuditor {
                         if (ident1.equals(ident) && fpath.contains(".html")) { // Only html gets passed to the html
                             title = d.child(0).ownText();
                             audit.audit(fpath, title);
+                            printString += audit.getMetrics();
                         }
                     }
                 }
             }
+        }
+        try (PrintWriter out = new PrintWriter("Report.csv")) {
+            out.print(printString);
         }
     }
 }

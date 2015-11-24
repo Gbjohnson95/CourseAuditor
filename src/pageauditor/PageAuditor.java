@@ -22,19 +22,8 @@ public class PageAuditor {
 
     private Document doc;
     private Element body;
-    private String filepath;
-    private String docTitle;
-    private Elements links;
-    private Elements bs;
-    private Elements is;
-    private Elements images;
-    private Elements spans;
-    private Elements divs;
-    private Elements ps;
-    private Elements titleE;
-    private Elements brs;
-    private Element banner;
-    private String htmlString;
+    private String filepath, docTitle, htmlString;
+    private Elements bs, is, images, spans, divs, titleE, brs, links;
 
     public void audit(String filename, String dTitle) throws IOException {
         File input = new File(filename);
@@ -49,7 +38,6 @@ public class PageAuditor {
             divs = body.getElementsByTag("div");
             is = body.getElementsByTag("i");
             bs = body.getElementsByTag("b");
-            ps = body.getElementsByTag("p");
             brs = body.getElementsByTag("br");
             htmlString = doc.toString();
             titleE = doc.select("title");
@@ -57,36 +45,35 @@ public class PageAuditor {
             // Remove commas from the titles
             docTitle = dTitle.replace(",", "");
             filepath = filename.replace(",", "");
-
-            // Writes the line
-            writeCSV(docTitle + ",");                  // Title
-            writeCSV(getHTMLTitle() + ",");            // HTML Title
-            writeCSV(numBHLinks() + ",");              // BH Links
-            writeCSV(numBXLinks() + ",");              // BX Links
-            writeCSV(numBadTargets() + ",");           // Bad Link Targets
-            writeCSV(numEmptyLinks() + ",");           // Empty Links
-            writeCSV(numBHImages() + ",");             // BH Images
-            writeCSV(numBadImageWidth() + ",");        // Bad Image Width
-            writeCSV(numBolds() + ",");                // Bolds
-            writeCSV(numSpans() + ",");                // Spans
-            writeCSV(numBadTags() + ",");              // <b>/<i>
-            writeCSV(numDivs() + ",");                 // Divs
-            writeCSV(numBrs() + ",");                  // Breaks
-            writeCSV(countBHVars() + ",");             // Checks for BH variables
-            writeCSV(mentionsSaturday() + ",");        // Page mentions saturday
-            writeCSV(checkHeaders() + ",");            // Headers
-            writeCSV(getTemplateName() + ",");         // Template name
-            writeCSV(checkFilePath() + ",");           // File Path
-            writeCSV("\n");
         }
     }
 
     /**
-     * Prints the table headers.
+     * Returns the string with the metrics.
      *
+     * @return
      */
-    public void printHeader() {
-        System.out.println("Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,Special Letters,BH Images,Image Width,Bolds,Spans,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath,");
+    public String getMetrics() {
+        String printString
+                = docTitle + ","            // Title
+                + getHTMLTitle() + ","      // HTML Title
+                + numBHLinks() + ","        // BH Links
+                + numBXLinks() + ","        // Box Links
+                + numBadTargets() + ","     // Bad Link Targets
+                + numEmptyLinks() + ","     // Empty Links
+                + numBHImages() + ","       // BH Images
+                + numBadImageWidth() + ","  // Image Width
+                + numBolds() + ","          // Bolds
+                + numSpans() + ","          // Spans
+                + numBadTags() + ","        // Bad Tags
+                + numDivs() + ","           // Divs
+                + numBrs() + ","            // Br
+                + countBHVars() + ","       // BHVars
+                + mentionsSaturday() + ","  // Mentions Saturday
+                + checkHeaders() + ","      // Headers
+                + getTemplateName() + ","   // Template
+                + checkFilePath() + ",\n";  // File Path
+        return printString;
     }
 
     private String checkFilePath() {
@@ -103,9 +90,9 @@ public class PageAuditor {
         } else {
             String title = titleE.first().text().replace(",", "");
             if (title == null ? docTitle == null : title.toLowerCase().trim().equals(docTitle.trim().toLowerCase())) {
-                return "Match!";
+                return "Matching";
             } else {
-                return "No Match: " + title;
+                return title;
             }
         }
     }
@@ -136,7 +123,6 @@ public class PageAuditor {
     }
 
     private int numBrs() {
-        int brCounters = 0;
         return brs.size();
     }
 
@@ -156,34 +142,19 @@ public class PageAuditor {
 
     private int numBHLinks() {
         int bhlinksCounter = 0;
-        for (Element a : links) {
-            String href = a.attr("href");
-            if (href.toLowerCase().contains("brainhoney")) {
-                bhlinksCounter++;
-            }
-        }
+        bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
         return bhlinksCounter;
     }
 
     private int numBHImages() {
         int bhimgesCounter = 0;
-        for (Element img : images) {
-            String src = img.attr("src");
-            if (src.toLowerCase().contains("brainhoney")) {
-                bhimgesCounter++;
-            }
-        }
+        bhimgesCounter = images.stream().map((img) -> img.attr("src")).filter((src) -> (src.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhimgesCounter, Integer::sum);
         return bhimgesCounter;
     }
 
     private int numBXLinks() {
         int bxlinksCounter = 0;
-        for (Element a : links) {
-            String href = a.attr("href");
-            if (href.toLowerCase().contains("box.com")) {
-                bxlinksCounter++;
-            }
-        }
+        bxlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("box.com"))).map((_item) -> 1).reduce(bxlinksCounter, Integer::sum);
         return bxlinksCounter;
     }
 
@@ -222,7 +193,7 @@ public class PageAuditor {
         }
         if ("123456".indexOf(headers) == 0) {
             return "Good: " + headers;
-        } else if (headers == "") {
+        } else if ("".equals(headers)) {
             return "Bad: ";
         } else {
             return "Bad: " + headers;
@@ -231,11 +202,7 @@ public class PageAuditor {
 
     private int numBadTargets() {
         int tgCounter = 0;
-        for (Element a : links) {
-            if (!a.attr("target").toLowerCase().contains("_blank".toLowerCase())) {
-                tgCounter++;
-            }
-        }
+        tgCounter = links.stream().filter((a) -> (!a.attr("target").toLowerCase().contains("_blank".toLowerCase()))).map((_item) -> 1).reduce(tgCounter, Integer::sum);
         return tgCounter;
     }
 
@@ -256,11 +223,7 @@ public class PageAuditor {
 
     private int numDivs() {
         int divCounter = 0;
-        for (Element div : divs) {
-            if (!div.hasAttr("id")) {
-                divCounter++;
-            }
-        }
+        divCounter = divs.stream().filter((div) -> (!div.hasAttr("id"))).map((_item) -> 1).reduce(divCounter, Integer::sum);
         return divCounter;
     }
 
@@ -272,9 +235,5 @@ public class PageAuditor {
             bCounter++;
         }
         return bCounter;
-    }
-
-    public void writeCSV(String text) {
-        System.out.print(text);
     }
 }
