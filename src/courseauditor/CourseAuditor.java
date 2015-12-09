@@ -27,6 +27,12 @@ public class CourseAuditor {
      */
     public static void main(String[] args) throws IOException {
         parseManifestAndRun();
+
+        
+        
+        
+        
+        
     }
 
     public static void parseManifestAndRun() throws IOException {
@@ -34,22 +40,19 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,BH Links,Box Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        String printString = "Title,HTML Title,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        //String printString = "Title,Benjamin Links,Course\n";
         String title;
         PageAuditor audit = new PageAuditor();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
             if ("content".equals(type)) {
-                String ident = e.attr("identifier");
                 String fpath = e.attr("href");
                 for (Element d : items) {
-                    if (d.hasAttr("identifierref")) {
-                        String ident1 = d.attr("identifierref");
-                        if (ident1.equals(ident) && fpath.contains(".html")) { // Only html gets passed to the html
-                            title = d.child(0).ownText();
-                            audit.audit(fpath, title);
-                            printString += audit.getMetrics();
-                        }
+                    if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
+                        title = d.child(0).ownText();
+                        audit.audit(fpath, title);
+                        printString += audit.getMetrics();
                     }
                 }
             }
@@ -57,5 +60,7 @@ public class CourseAuditor {
         try (PrintWriter out = new PrintWriter("Report.csv")) {
             out.print(printString);
         }
+        
+        //System.out.print(printString);
     }
 }

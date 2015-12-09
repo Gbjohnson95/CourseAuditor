@@ -55,24 +55,27 @@ public class PageAuditor {
      */
     public String getMetrics() {
         String printString
-                = docTitle + ","            // Title
-                + getHTMLTitle() + ","      // HTML Title
-                + numBHLinks() + ","        // BH Links
-                + numBXLinks() + ","        // Box Links
-                + numBadTargets() + ","     // Bad Link Targets
-                + numEmptyLinks() + ","     // Empty Links
-                + numBHImages() + ","       // BH Images
-                + numBadImageWidth() + ","  // Image Width
-                + numBolds() + ","          // Bolds
-                + numSpans() + ","          // Spans
-                + numBadTags() + ","        // Bad Tags
-                + numDivs() + ","           // Divs
-                + numBrs() + ","            // Br
-                + countBHVars() + ","       // BHVars
-                + mentionsSaturday() + ","  // Mentions Saturday
-                + checkHeaders() + ","      // Headers
-                + getTemplateName() + ","   // Template
+                = docTitle + "," // Title
+
+                + getHTMLTitle() + "," // HTML Title
+                + numBHLinks() + "," // BH Links
+                + numBXLinks() + "," // Box Links
+                + benjaminLinks() + "," // Benjamin Links
+                + numBadTargets() + "," // Bad Link Targets
+                + numEmptyLinks() + "," // Empty Links
+                + numBHImages() + "," // BH Images
+                + numBadImageWidth() + "," // Image Width
+                + numBolds() + "," // Bolds
+                + numSpans() + "," // Spans
+                + numBadTags() + "," // Bad Tags
+                + numDivs() + "," // Divs
+                + numBrs() + "," // Br
+                + countBHVars() + "," // BHVars
+                + mentionsSaturday() + "," // Mentions Saturday
+                + checkHeaders() + "," // Headers
+                + getTemplateName() + "," // Template
                 + checkFilePath() + ",\n";  // File Path
+
         return printString;
     }
 
@@ -84,6 +87,13 @@ public class PageAuditor {
         }
     }
 
+    private String benjaminLinks() {
+        int bhlinksCounter = 0;
+        bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("courses.byui.edu"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
+        return bhlinksCounter + "";
+    }
+    
+    
     private String getHTMLTitle() {
         if (titleE.isEmpty()) {
             return "ERROR: COULD NOT READ TITLE";
@@ -191,10 +201,11 @@ public class PageAuditor {
         if (!body.getElementsByTag("h6").isEmpty()) {
             headers += "6";
         }
+        if (headers == "") {
+            headers = "NONE";
+        }
         if ("123456".indexOf(headers) == 0) {
             return "Good: " + headers;
-        } else if ("".equals(headers)) {
-            return "Bad: ";
         } else {
             return "Bad: " + headers;
         }

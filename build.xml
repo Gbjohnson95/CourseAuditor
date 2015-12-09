@@ -74,9 +74,10 @@
 
         <!-- Change the value of this property to be the name of your JAR,
              minus the .jar extension. It should not have spaces.
-             <property name="Course" value="MyJarName"/>
+             <property name="store.jar.name" value="MyJarName"/>
         -->
         <property name="store.jar.name" value="CourseAuditor"/>
+
 
         <!-- don't edit below this line -->
 
@@ -105,4 +106,6 @@
         <delete file="${store.dir}/temp_final.jar"/>
 
     </target>
+
+	
 </project>
