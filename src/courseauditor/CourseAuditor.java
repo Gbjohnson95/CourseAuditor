@@ -40,9 +40,14 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        String printString = "Title,HTML Title,Bad OUI,Calender Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
         //String printString = "Title,Benjamin Links,Course\n";
+        Element manifest = xmlDoc.select("manifest").first();
+        
         String title;
+        String orgunitid = manifest.attr("identifier").substring(4);
+        //System.out.print("OrgUnitId: " + orgunitid);
+        //*
         PageAuditor audit = new PageAuditor();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
@@ -51,7 +56,7 @@ public class CourseAuditor {
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
                         title = d.child(0).ownText();
-                        audit.audit(fpath, title);
+                        audit.audit(fpath, title, orgunitid);
                         printString += audit.getMetrics();
                     }
                 }
@@ -60,6 +65,7 @@ public class CourseAuditor {
         try (PrintWriter out = new PrintWriter("Report.csv")) {
             out.print(printString);
         }
+        //*/
         
         //System.out.print(printString);
     }

@@ -22,11 +22,12 @@ public class PageAuditor {
 
     private Document doc;
     private Element body;
-    private String filepath, docTitle, htmlString;
+    private String filepath, docTitle, htmlString, oui;
     private Elements bs, is, images, spans, divs, titleE, brs, links;
 
-    public void audit(String filename, String dTitle) throws IOException {
+    public void audit(String filename, String dTitle, String orgunitid) throws IOException {
         File input = new File(filename);
+        oui = orgunitid;
         if (input.exists()) {
             doc = Jsoup.parse(input, "UTF-8");
             body = doc.getElementsByTag("body").first();
@@ -58,6 +59,8 @@ public class PageAuditor {
                 = docTitle + "," // Title
 
                 + getHTMLTitle() + "," // HTML Title
+                + wrongcourselinks() + "," // Links pointing outside of course
+                + callinks() + "," // Calender links
                 + numBHLinks() + "," // BH Links
                 + numBXLinks() + "," // Box Links
                 + benjaminLinks() + "," // Benjamin Links
@@ -93,6 +96,26 @@ public class PageAuditor {
         return bhlinksCounter + "";
     }
     
+    private String wrongcourselinks() {
+        int wronglinkscounter = 0;
+        for (Element a : links) {
+            if (a.attr("href").contains("/d2l/") && !a.attr("href").contains(oui)) {
+                wronglinkscounter++;
+            }
+        }
+        return wronglinkscounter + "";
+    }
+    
+    
+    private String callinks() {
+        int callinkscounter = 0;
+        for (Element a : links) {
+            if (a.attr("href").contains("/d2l/le/calendar/")) {
+                callinkscounter++;
+            }
+        }
+        return callinkscounter + "";
+    }
     
     private String getHTMLTitle() {
         if (titleE.isEmpty()) {
