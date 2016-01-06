@@ -45,6 +45,8 @@ public class PageAuditor {
 
             // Remove commas from the titles
             docTitle = dTitle.replace(",", "");
+            docTitle = docTitle.replaceAll("\t", "");
+            docTitle = docTitle.replaceAll("\n", "");
             filepath = filename.replace(",", "");
         }
     }
@@ -122,6 +124,8 @@ public class PageAuditor {
             return "ERROR: COULD NOT READ TITLE";
         } else {
             String title = titleE.first().text().replace(",", "");
+            title = title.replaceAll("\t", "");
+            title = title.replaceAll("\n", "");
             if (title == null ? docTitle == null : title.toLowerCase().trim().equals(docTitle.trim().toLowerCase())) {
                 return "Matching";
             } else {
