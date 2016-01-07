@@ -5,6 +5,7 @@
  */
 package courseauditor;
 
+import CourseCleaner.CourseCleaner;
 import java.io.*;
 import java.util.Scanner;
 import org.jsoup.Jsoup;
@@ -12,8 +13,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
-
-import pageauditor.PageAuditor;
 
 /**
  *
@@ -26,29 +25,16 @@ public class CourseAuditor {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        parseManifestAndRun();
-
-        
-        
-        
-        
-        
+        fixthecourse();
     }
 
-    public static void parseManifestAndRun() throws IOException {
+    public static void fixthecourse() throws FileNotFoundException, IOException {
         String content = new Scanner(new File("imsmanifest.xml")).useDelimiter("\\Z").next();
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,Bad OUI,Calender Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
-        //String printString = "Title,Benjamin Links,Course\n";
-        Element manifest = xmlDoc.select("manifest").first();
-        
+        CourseCleaner course = new CourseCleaner();
         String title;
-        String orgunitid = manifest.attr("identifier").substring(4);
-        //System.out.print("OrgUnitId: " + orgunitid);
-        //*
-        PageAuditor audit = new PageAuditor();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
             if ("content".equals(type)) {
@@ -56,17 +42,20 @@ public class CourseAuditor {
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
                         title = d.child(0).ownText();
-                        audit.audit(fpath, title, orgunitid);
-                        printString += audit.getMetrics();
+                        File input = new File(fpath);
+                        if (input.exists()) {
+                            course.cleanDoc(fpath, title);
+                            Writer writer = new PrintWriter(fpath);
+                            System.out.println("Document Successfuly Cleaned");
+                            System.out.println("\tFile Name: " + fpath);
+                            writer.write(course.getfixedsource());
+                            writer.close();
+                            System.out.println("\tFile Saved\n");
+                        }
+
                     }
                 }
             }
         }
-        try (PrintWriter out = new PrintWriter("Report.csv")) {
-            out.print(printString);
-        }
-        //*/
-        
-        //System.out.print(printString);
     }
 }

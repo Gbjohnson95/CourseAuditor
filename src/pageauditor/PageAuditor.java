@@ -71,10 +71,10 @@ public class PageAuditor {
                 + numBHImages() + "," // BH Images
                 + numBadImageWidth() + "," // Image Width
                 + numBolds() + "," // Bolds
-                + numSpans() + "," // Spans
-                + numBadTags() + "," // Bad Tags
+                + spans.size() + "," // Spans
+                + (bs.size() + is.size()) + "," // Bad Tags
                 + numDivs() + "," // Divs
-                + numBrs() + "," // Br
+                + brs.size() + "," // Br
                 + countBHVars() + "," // BHVars
                 + mentionsSaturday() + "," // Mentions Saturday
                 + checkHeaders() + "," // Headers
@@ -85,7 +85,7 @@ public class PageAuditor {
     }
 
     private String checkFilePath() {
-        if (filepath.contains("Course Files")) {
+        if (filepath.contains("Course Files") || filepath.contains("Content Files") ) {
             return "Good: " + filepath;
         } else {
             return "Bad: " + filepath;
@@ -159,10 +159,6 @@ public class PageAuditor {
         return returnString;
     }
 
-    private int numBrs() {
-        return brs.size();
-    }
-
     private int countBHVars() {
         int BHVarsCounter = 0;
         Pattern findvars = Pattern.compile("\\$[A-Za-z]+\\S\\$");
@@ -172,11 +168,7 @@ public class PageAuditor {
         }
         return BHVarsCounter;
     }
-
-    private int numBadTags() {
-        return bs.size() + is.size();
-    }
-
+    
     private int numBHLinks() {
         int bhlinksCounter = 0;
         bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
@@ -253,10 +245,6 @@ public class PageAuditor {
             }
         }
         return imgCounter;
-    }
-
-    private int numSpans() {
-        return spans.size();
     }
 
     private int numDivs() {
