@@ -19,10 +19,12 @@ public class CourseCleaner {
 
     private Document doc, finaldoc;
     private Element body;
-    private String returnString, title;
+    private String returnString, title, orgunitid;
 
-    public void cleanDoc(String filename, String titletext) throws IOException {
+    public void cleanDoc(String filename, String titletext, String oui) throws IOException {
         File input = new File(filename);
+
+        orgunitid = oui;
 
         title = titletext;
         if (input.exists()) {
@@ -81,18 +83,16 @@ public class CourseCleaner {
         doc.select("iframe[src*='content.byui.edu/file/']").attr("width", "100%");
 
         // Rip callender links
-        doc.select("a[href*=\"/d2l/le/calendar/\"]").unwrap();
-
+        //doc.select("a[href*=\"/d2l/le/calendar/\"]").unwrap();
         // Links with no href
         doc.select("a:not([href])").unwrap();
-        
+
         // P tags encllosed by other p tags
         //doc.select("p > p").unwrap();
-        
-        
         returnString = doc.toString();
-        returnString = returnString.replaceAll("(</?(?:b|i|u|p|div)>)\\1+", "$1").replaceAll("</(b|i|u|p|div)><\\1>", "");
-        returnString = returnString.replaceAll("&amp;", "&");
+        String newoui = "ou=" + orgunitid;
+        returnString = returnString.replaceAll("/d2l/le/calendar/\\d{5}", "/d2l/le/calendar/" + orgunitid);
+        returnString = returnString.replaceAll("ou=\\d{5}", newoui);
         returnString = returnString.replaceAll("&nbsp;", " ");
         returnString = returnString.replaceAll("&ldquo;", "\"");
         returnString = returnString.replaceAll("&rdquo;", "");
@@ -116,7 +116,7 @@ public class CourseCleaner {
         returnString = returnString.replaceAll("<h4> </h4>", "");
         returnString = returnString.replaceAll("<h5> </h5>", "");
         returnString = returnString.replaceAll("<h6> </h6>", "");
-        
+
     }
 
     public String getfixedsource() {
