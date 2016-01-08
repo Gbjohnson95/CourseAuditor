@@ -26,8 +26,8 @@ public class CourseAuditor {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        parseManifestAndRun("before.csv");
-        fixthecourse();
+        //parseManifestAndRun("before.csv");
+        //fixthecourse();
         parseManifestAndRun("after.csv");
     }
 
@@ -77,6 +77,7 @@ public class CourseAuditor {
         String orgunitid = manifest.attr("identifier").substring(4);
         //System.out.print("OrgUnitId: " + orgunitid);
         //*
+        String date_start, date_end, date_due;
         PageAuditor audit = new PageAuditor();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
@@ -84,6 +85,10 @@ public class CourseAuditor {
                 String fpath = e.attr("href");
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
+                        date_start = d.attr("date_start");
+                        date_end   = d.attr("date_end");
+                        date_due   = d.attr("date_due");
+                        System.out.println(date_start + date_end + date_due);
                         title = d.child(0).ownText();
                         audit.audit(fpath, title, orgunitid);
                         printString += audit.getMetrics();
@@ -91,7 +96,7 @@ public class CourseAuditor {
                 }
             }
         }
-        try (PrintWriter out = new PrintWriter("Report.csv")) {
+        try (PrintWriter out = new PrintWriter(resultname)) {
             out.print(printString);
         }
     }

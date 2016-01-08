@@ -10,6 +10,7 @@ import java.io.IOException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 /**
  *
@@ -17,7 +18,7 @@ import org.jsoup.nodes.Element;
  */
 public class CourseCleaner {
 
-    private Document doc, finaldoc;
+    private Document doc, finaldoc, newdoc;
     private Element body;
     private String returnString, title, orgunitid;
 
@@ -30,12 +31,15 @@ public class CourseCleaner {
         if (input.exists()) {
             doc = Jsoup.parse(input, "UTF-8");
             body = doc.getElementsByTag("body").first();
-            cleancode();
+            parseClean(doc.toString());
+            parseClean(doc.toString());
         }
     }
 
-    private void cleancode() {
+    private String parseClean(String input) {
         // Sync Title
+        doc = Jsoup.parse(input, "UTF-8");
+        doc = Jsoup.parse(divWhiteList(doc.toString()), "UTF-8");
         if (!doc.select("title").isEmpty()) {
             doc.select("title").first().text(title);
         } else {
@@ -49,11 +53,11 @@ public class CourseCleaner {
         doc.select("p[style*='font-weight: bold']").removeAttr("style");
 
         //Remove empty divs
-        doc.select("div:empty[id!='main'][id!='header'][id!='article']").unwrap();
+        doc.select("div:not([id]):empty").unwrap();
 
         // Replace other divs with p tags
-        doc.select("div[id!='main'][id!='header'][id!='article']").wrap("<p></p>");
-        doc.select("div[id!='main'][id!='header'][id!='article']").unwrap();
+        doc.select("div:not([id])").wrap("<p></p>");
+        doc.select("div:not([id])").unwrap();
 
         // Add alt attribute to images
         doc.select("img:not([alt])").attr("alt", "");
@@ -83,43 +87,71 @@ public class CourseCleaner {
         doc.select("iframe[src*='content.byui.edu/file/']").attr("width", "100%");
 
         // Rip callender links
-        //doc.select("a[href*=\"/d2l/le/calendar/\"]").unwrap();
+        doc.select("a[href*=\"/d2l/le/calendar/\"]").unwrap();
         // Links with no href
         doc.select("a:not([href])").unwrap();
 
-        // P tags encllosed by other p tags
-        //doc.select("p > p").unwrap();
-        returnString = doc.toString();
-        String newoui = "ou=" + orgunitid;
-        returnString = returnString.replaceAll("/d2l/le/calendar/\\d{5}", "/d2l/le/calendar/" + orgunitid);
-        returnString = returnString.replaceAll("ou=\\d{5}", newoui);
-        returnString = returnString.replaceAll("&nbsp;", " ");
-        returnString = returnString.replaceAll("&ldquo;", "\"");
-        returnString = returnString.replaceAll("&rdquo;", "");
-        returnString = returnString.replaceAll("&lsquo;", "");
-        returnString = returnString.replaceAll("&rsquo;", "");
-        returnString = returnString.replaceAll("&ndash;", "");
-        returnString = returnString.replaceAll("&mdash;", "");
-        returnString = returnString.replaceAll("<p></p>", "");
-        returnString = returnString.replaceAll("<a></a>", "");
-        returnString = returnString.replaceAll("<a> </a>", "");
-        returnString = returnString.replaceAll("<h1></h1>", "");
-        returnString = returnString.replaceAll("<h2></h2>", "");
-        returnString = returnString.replaceAll("<h3></h3>", "");
-        returnString = returnString.replaceAll("<h4></h4>", "");
-        returnString = returnString.replaceAll("<h5></h5>", "");
-        returnString = returnString.replaceAll("<h6></h6>", "");
-        returnString = returnString.replaceAll("<p> </p>", "");
-        returnString = returnString.replaceAll("<h1> </h1>", "");
-        returnString = returnString.replaceAll("<h2> </h2>", "");
-        returnString = returnString.replaceAll("<h3> </h3>", "");
-        returnString = returnString.replaceAll("<h4> </h4>", "");
-        returnString = returnString.replaceAll("<h5> </h5>", "");
-        returnString = returnString.replaceAll("<h6> </h6>", "");
-
+        
+        return divWhiteList(doc.toString());
+    }
+    
+    private String divWhiteList(String input) {
+        Document divdoc = Jsoup.parse(input, "UTF-8");
+        Elements divs = doc.select("div[id]");
+        for (Element e : divs) {
+            if ( e.hasAttr("id") ) {
+                if ("body".equals(e.attr("id")) || "header".equals(e.attr("id")) || "main".equals(e.attr("id"))  || "article".equals(e.attr("id"))  || "decorative".equals(e.attr("id"))  || "container".equals(e.attr("id"))  ) {
+                    
+                } else {
+                    e.removeAttr("id");
+                }
+            }
+        }
+        return divdoc.toString();
+    }
+    
+    private String replaceStrings(String input) {
+        String output = input;
+        
+        output = output.replaceAll("&nbsp;", " ");
+        output = output.replaceAll("&ldquo;", "\"");
+        output = output.replaceAll("&rdquo;", "");
+        output = output.replaceAll("&lsquo;", "");
+        output = output.replaceAll("&rsquo;", "");
+        output = output.replaceAll("&ndash;", "");
+        output = output.replaceAll("&mdash;", "");
+        output = output.replaceAll("<p></p>", "");
+        output = output.replaceAll("<a></a>", "");
+        output = output.replaceAll("<a> </a>", "");
+        output = output.replaceAll("<h1></h1>", "");
+        output = output.replaceAll("<h2></h2>", "");
+        output = output.replaceAll("<h3></h3>", "");
+        output = output.replaceAll("<h4></h4>", "");
+        output = output.replaceAll("<h5></h5>", "");
+        output = output.replaceAll("<h6></h6>", "");
+        output = output.replaceAll("<p> </p>", "");
+        output = output.replaceAll("<h1> </h1>", "");
+        output = output.replaceAll("<h2> </h2>", "");
+        output = output.replaceAll("<h3> </h3>", "");
+        output = output.replaceAll("<h4> </h4>", "");
+        output = output.replaceAll("<h5> </h5>", "");
+        output = output.replaceAll("<h6> </h6>", "");
+        output = output.replaceAll("  +", "");
+        
+        return output;
+    }
+    
+    private String replaceStringLooper (String input) {
+        newdoc = Jsoup.parse(input, "UTF-8");
+        
+        for ( int i = 0; i < 5; i++ ) {
+            newdoc = Jsoup.parse(replaceStrings(newdoc.toString()), "UTF-8");
+        }
+        return newdoc.toString();
     }
 
     public String getfixedsource() {
-        return returnString;
+        replaceStringLooper(doc.toString());
+        return newdoc.toString();
     }
 }
