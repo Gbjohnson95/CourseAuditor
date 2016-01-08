@@ -7,6 +7,8 @@ package pageauditor;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
@@ -22,15 +24,20 @@ public class PageAuditor {
 
     private Document doc;
     private Element body;
-    private String filepath, docTitle, htmlString, oui;
+    private String filepath, docTitle, htmlString, oui, date_start, date_end, date_due;
     private Elements bs, is, images, spans, divs, titleE, brs, links;
 
-    public void audit(String filename, String dTitle, String orgunitid) throws IOException {
+    public void audit(String filename, String dTitle, String orgunitid, String start_date, String end_date, String due_date) throws IOException {
         File input = new File(filename);
         oui = orgunitid;
         if (input.exists()) {
             doc = Jsoup.parse(input, "UTF-8");
             body = doc.getElementsByTag("body").first();
+            
+            date_start = start_date;
+            date_end = end_date;
+            date_due = due_date;
+            
 
             // Set elements for program
             links = body.getElementsByTag("a");
@@ -59,37 +66,32 @@ public class PageAuditor {
     public String getMetrics() {
         String printString
                 = docTitle + "," // Title
-
                 + getHTMLTitle() + "," // HTML Title
+                + date_start.replace("T", " ") + "," // Start date
+                + date_end.replace("T", " ") + "," // End date
+                + date_due.replace("T", " ") + "," // Due date
                 + wrongcourselinks() + "," // Links pointing outside of course
-                + callinks() + "," // Calender links
                 + numBHLinks() + "," // BH Links
                 + numBXLinks() + "," // Box Links
                 + benjaminLinks() + "," // Benjamin Links
-                + numBadTargets() + "," // Bad Link Targets
                 + numEmptyLinks() + "," // Empty Links
                 + numBHImages() + "," // BH Images
-                + numBadImageWidth() + "," // Image Width
                 + numBolds() + "," // Bolds
-                + spans.size() + "," // Spans
-                + (bs.size() + is.size()) + "," // Bad Tags
-                + numDivs() + "," // Divs
-                + brs.size() + "," // Br
-                + countBHVars() + "," // BHVars
-                + mentionsSaturday() + "," // Mentions Saturday
-                + checkHeaders() + "," // Headers
-                + getTemplateName() + "," // Template
-                + checkFilePath() + ",\n";  // File Path
+                + (bs.size() + is.size() + spans.size() + numDivs() + brs.size()) + ",\n"; // Bad Tags
 
         return printString;
     }
 
     private String checkFilePath() {
-        if (filepath.contains("Course Files") || filepath.contains("Content Files") ) {
+        if (filepath.contains("Course Files") || filepath.contains("Content Files")) {
             return "Good: " + filepath;
         } else {
             return "Bad: " + filepath;
         }
+    }
+
+    private String dateParser(String dateString) {
+        return dateString.replaceAll("T", dateString);
     }
 
     private String benjaminLinks() {
@@ -97,7 +99,7 @@ public class PageAuditor {
         bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("courses.byui.edu"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
         return bhlinksCounter + "";
     }
-    
+
     private String wrongcourselinks() {
         int wronglinkscounter = 0;
         for (Element a : links) {
@@ -107,8 +109,7 @@ public class PageAuditor {
         }
         return wronglinkscounter + "";
     }
-    
-    
+
     private String callinks() {
         int callinkscounter = 0;
         for (Element a : links) {
@@ -118,7 +119,7 @@ public class PageAuditor {
         }
         return callinkscounter + "";
     }
-    
+
     private String getHTMLTitle() {
         if (titleE.isEmpty()) {
             return "ERROR: COULD NOT READ TITLE";
@@ -134,41 +135,6 @@ public class PageAuditor {
         }
     }
 
-    private String getTemplateName() {
-        String returnString = "";
-        for (Element img : images) {
-            if (img.attr("alt").toLowerCase().contains("banner")) {
-                if (img.attr("src").contains("largeBanner")) {
-                    returnString = "Large";
-                }
-                if (img.attr("src").contains("smallBanner")) {
-                    returnString = "Small";
-                }
-            }
-        }
-        return returnString;
-    }
-
-    private String mentionsSaturday() {
-        String returnString = "No";
-        Pattern dueSaturday = Pattern.compile("[sS]aturday");
-        Matcher m = dueSaturday.matcher(htmlString);
-        while (m.find()) {
-            returnString = "Yes";
-        }
-        return returnString;
-    }
-
-    private int countBHVars() {
-        int BHVarsCounter = 0;
-        Pattern findvars = Pattern.compile("\\$[A-Za-z]+\\S\\$");
-        Matcher m = findvars.matcher(htmlString);
-        while (m.find()) {
-            BHVarsCounter++;
-        }
-        return BHVarsCounter;
-    }
-    
     private int numBHLinks() {
         int bhlinksCounter = 0;
         bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
@@ -234,17 +200,6 @@ public class PageAuditor {
         int tgCounter = 0;
         tgCounter = links.stream().filter((a) -> (!a.attr("target").toLowerCase().contains("_blank".toLowerCase()))).map((_item) -> 1).reduce(tgCounter, Integer::sum);
         return tgCounter;
-    }
-
-    private int numBadImageWidth() {
-        int imgCounter = 0;
-        for (Element img : images) {
-            String width = img.attr("width");
-            if (!width.toLowerCase().contains("%") && !img.attr("src").toLowerCase().contains("banner")) {
-                imgCounter++;
-            }
-        }
-        return imgCounter;
     }
 
     private int numDivs() {

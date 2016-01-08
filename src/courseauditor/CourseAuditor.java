@@ -28,7 +28,36 @@ public class CourseAuditor {
     public static void main(String[] args) throws IOException {
         //parseManifestAndRun("before.csv");
         //fixthecourse();
-        parseManifestAndRun("after.csv");
+
+        // Make reports folder
+        File reports = new File("Reports");
+        if (!reports.exists()) {
+            reports.mkdir();
+        }
+
+        parseManifestAndRun("Reports/CourseAudit.csv");
+        printDates("Reports/Dates.csv");
+    }
+
+    public static void printDates(String resultname) throws IOException {
+        String content = new Scanner(new File("imsmanifest.xml")).useDelimiter("\\Z").next();
+        Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
+        Elements items = xmlDoc.getElementsByTag("item");
+        String printString = "Title,Start Date,End Date,Due Date,\n";
+        String date_start, date_end, date_due, title;
+        for (Element d : items) {
+            title = d.child(0).ownText();
+            date_start = d.attr("date_start").replace("T", " ");
+            date_end = d.attr("date_end").replace("T", " ");
+            date_due = d.attr("date_due").replace("T", " ");
+            if ((date_start.length() + date_end.length() + date_due.length()) > 0) {
+                printString += "\"" + title + "\"," + date_start + "," + date_end + "," + date_due + ",\n";
+            }
+        }
+
+        try (PrintWriter out = new PrintWriter(resultname)) {
+            out.print(printString);
+        }
     }
 
     public static void fixthecourse() throws FileNotFoundException, IOException {
@@ -69,7 +98,7 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,Bad OUI,Calender Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        String printString = "Title,HTML Title,Start Date,End Date,Due Date,Bad OUI,BH Links,Box Links,Benjamin Links,Empty Links,BH Images,Bolds,Bad Tags\n";
         //String printString = "Title,Benjamin Links,Course\n";
         Element manifest = xmlDoc.select("manifest").first();
 
@@ -86,11 +115,11 @@ public class CourseAuditor {
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
                         date_start = d.attr("date_start");
-                        date_end   = d.attr("date_end");
-                        date_due   = d.attr("date_due");
-                        System.out.println(date_start + date_end + date_due);
+                        date_end = d.attr("date_end");
+                        date_due = d.attr("date_due");
+                        //System.out.println(date_start + date_end + date_due);
                         title = d.child(0).ownText();
-                        audit.audit(fpath, title, orgunitid);
+                        audit.audit(fpath, title, orgunitid, date_start, date_end, date_due);
                         printString += audit.getMetrics();
                     }
                 }
