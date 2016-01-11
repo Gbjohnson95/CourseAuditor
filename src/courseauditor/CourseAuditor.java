@@ -32,13 +32,17 @@ public class CourseAuditor {
         if (!reports.exists()) {
             reports.mkdir();
         }
+        
+        
 
+        /*
         parseManifestAndRunCI("Reports/CourseAuditCI Pre-Fix.csv");
         parseManifestAndRunCCT("Reports/CourseAuditCCT Pre-Fix.csv");
         fixthecourse();
         parseManifestAndRunCI("Reports/CourseAuditCI Post-Fix.csv");
         parseManifestAndRunCCT("Reports/CourseAuditCCT Post-Fix.csv");
         printDates("Reports/Dates.csv");
+        */
     }
 
     public static void printDates(String resultname) throws IOException {

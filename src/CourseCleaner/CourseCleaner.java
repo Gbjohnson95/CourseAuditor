@@ -12,6 +12,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+
+
+
+// THIS DOCUMENT IS BEING OBSOLETED IN FAVOR OF COURSEDOCUMENT
+
+
+
 /**
  *
  * @author gbjohnson
