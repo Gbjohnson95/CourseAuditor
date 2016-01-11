@@ -27,17 +27,17 @@ public class CourseAuditor {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        //parseManifestAndRun("before.csv");
-        //fixthecourse();
-
         // Make reports folder
         File reports = new File("Reports");
         if (!reports.exists()) {
             reports.mkdir();
         }
 
-        parseManifestAndRunCI("Reports/CourseAuditCI.csv");
-        parseManifestAndRunCCT("Reports/CourseAuditCCT.csv");
+        parseManifestAndRunCI("Reports/CourseAuditCI Pre-Fix.csv");
+        parseManifestAndRunCCT("Reports/CourseAuditCCT Pre-Fix.csv");
+        fixthecourse();
+        parseManifestAndRunCI("Reports/CourseAuditCI Post-Fix.csv");
+        parseManifestAndRunCCT("Reports/CourseAuditCCT Post-Fix.csv");
         printDates("Reports/Dates.csv");
     }
 
@@ -82,11 +82,8 @@ public class CourseAuditor {
                         if (input.exists()) {
                             course.cleanDoc(fpath, title, orgunitid);
                             Writer writer = new PrintWriter(fpath);
-                            System.out.println("Document Successfuly Cleaned");
-                            System.out.println("\tFile Name: " + fpath);
                             writer.write(course.getfixedsource());
                             writer.close();
-                            System.out.println("\tFile Saved\n");
                         }
 
                     }
