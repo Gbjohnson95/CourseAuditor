@@ -35,14 +35,14 @@ public class CourseAuditor {
         
         
 
-        /*
-        parseManifestAndRunCI("Reports/CourseAuditCI Pre-Fix.csv");
+        
+        //parseManifestAndRunCI("Reports/CourseAuditCI Pre-Fix.csv");
         parseManifestAndRunCCT("Reports/CourseAuditCCT Pre-Fix.csv");
-        fixthecourse();
-        parseManifestAndRunCI("Reports/CourseAuditCI Post-Fix.csv");
-        parseManifestAndRunCCT("Reports/CourseAuditCCT Post-Fix.csv");
+        //fixthecourse();
+        //parseManifestAndRunCI("Reports/CourseAuditCI Post-Fix.csv");
+        //parseManifestAndRunCCT("Reports/CourseAuditCCT Post-Fix.csv");
         printDates("Reports/Dates.csv");
-        */
+       
     }
 
     public static void printDates(String resultname) throws IOException {
@@ -135,7 +135,7 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,Bad OUI,Calender Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        String printString = "Title,HTML Title,Bad OUI,Calender Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
         //String printString = "Title,Benjamin Links,Course\n";
         Element manifest = xmlDoc.select("manifest").first();
 

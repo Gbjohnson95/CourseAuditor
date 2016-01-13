@@ -70,6 +70,8 @@ public class PageAuditorCCT {
                 + getHTMLTitle() + "," // HTML Title
                 + wrongcourselinks() + "," // Links pointing outside of course
                 + callinks() + "," // Calender links
+                //+ quicklinks() + "," // Corrent links
+                + viewContent() + "," // Incorrect link type
                 + numBHLinks() + "," // BH Links
                 + numBXLinks() + "," // Box Links
                 + benjaminLinks() + "," // Benjamin Links
@@ -97,6 +99,33 @@ public class PageAuditorCCT {
         } else {
             return "Bad: " + filepath;
         }
+    }
+    
+    /*
+    private String quicklinks() {
+        int wronglinkscounter = 0;
+        for (Element a : links) {
+            if (a.attr("href").contains("/quickLink/")) {
+                wronglinkscounter++;
+            }
+        }
+        return wronglinkscounter + "";
+    }
+    */
+    
+    private String viewContent() {
+        int wronglinkscounter = 0;
+        for (Element a : links) {
+            if (a.attr("href").contains("/viewContent/")) {
+                wronglinkscounter++;
+            }
+        }
+        for (Element a : links) {
+            if (a.attr("href").contains("/home/")) {
+                wronglinkscounter++;
+            }
+        }
+        return wronglinkscounter + "";
     }
 
     private String benjaminLinks() {
