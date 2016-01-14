@@ -188,31 +188,21 @@ public class CourseDocument {
     }
 
     public String numBenLinks() {
-        int bhlinksCounter = 0;
-        bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("courses.byui.edu"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
-        return bhlinksCounter + "";
+        return body.select("a[href='courses.byui.edu']").size() + "";
+    }
+    
+    public String countCSSQuery(String query) {
+        return doc.select(query).size() + "";
     }
 
-    public String numBHLinks() {
-        int bhlinksCounter = 0;
-        bhlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhlinksCounter, Integer::sum);
-        return bhlinksCounter + "";
-    }
-
-    public String numBoxLinks() {
-        int bxlinksCounter = 0;
-        bxlinksCounter = links.stream().map((a) -> a.attr("href")).filter((href) -> (href.toLowerCase().contains("box.com"))).map((_item) -> 1).reduce(bxlinksCounter, Integer::sum);
-        return bxlinksCounter + "";
-    }
-
-    public String numCalLinks() {
-        int callinkscounter = 0;
-        for (Element a : links) {
-            if (a.attr("href").contains("/d2l/le/calendar/")) {
-                callinkscounter++;
-            }
+    public String regexSearch(String regex) {
+        int matchCounter = 0;
+        Pattern findvars = Pattern.compile(regex);
+        Matcher m = findvars.matcher(doc.toString());
+        while (m.find()) {
+            matchCounter++;
         }
-        return callinkscounter + "";
+        return matchCounter + "";
     }
     
     public String numWrongCourseLinks() {
@@ -234,30 +224,6 @@ public class CourseDocument {
         return emptyLinks + "";
     }
 
-    public String numBadLinkTargets() {
-        int tgCounter = 0;
-        tgCounter = links.stream().filter((a) -> (!a.attr("target").toLowerCase().contains("_blank".toLowerCase()))).map((_item) -> 1).reduce(tgCounter, Integer::sum);
-        return tgCounter + "";
-    }
-
-    public String numDivs() {
-        return "";
-    }
-
-    public String numCssBolds() {
-        int bCounter = 0;
-        Pattern dueSaturday = Pattern.compile("font-weight\\: bold");
-        Matcher m = dueSaturday.matcher(doc.toString());
-        while (m.find()) {
-            bCounter++;
-        }
-        return bCounter + "";
-    }
-
-    public String countStringOccurence() {
-        return "";
-    }
-
     public String numBadImgWidth() {
         int imgCounter = 0;
         for (Element img : images) {
@@ -268,11 +234,4 @@ public class CourseDocument {
         }
         return imgCounter + "";
     }
-
-    public String numBHImg() {
-        int bhimgesCounter = 0;
-        bhimgesCounter = images.stream().map((img) -> img.attr("src")).filter((src) -> (src.toLowerCase().contains("brainhoney"))).map((_item) -> 1).reduce(bhimgesCounter, Integer::sum);
-        return bhimgesCounter + "";
-    }
-
 }
