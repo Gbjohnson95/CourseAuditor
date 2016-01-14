@@ -27,18 +27,14 @@ public class CourseAuditor {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        //parseManifestAndRun("before.csv");
-        //fixthecourse();
-
         // Make reports folder
         File reports = new File("Reports");
         if (!reports.exists()) {
             reports.mkdir();
         }
-
-        parseManifestAndRunCI("Reports/CourseAuditCI.csv");
-        parseManifestAndRunCCT("Reports/CourseAuditCCT.csv");
+        parseManifestAndRunCCT("Reports/Audit.csv");
         printDates("Reports/Dates.csv");
+       
     }
 
     public static void printDates(String resultname) throws IOException {
@@ -82,11 +78,8 @@ public class CourseAuditor {
                         if (input.exists()) {
                             course.cleanDoc(fpath, title, orgunitid);
                             Writer writer = new PrintWriter(fpath);
-                            System.out.println("Document Successfuly Cleaned");
-                            System.out.println("\tFile Name: " + fpath);
                             writer.write(course.getfixedsource());
                             writer.close();
-                            System.out.println("\tFile Saved\n");
                         }
 
                     }
@@ -134,7 +127,7 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,Bad OUI,Calender Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        String printString = "Title,HTML Title,Bad OUI,Calender Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
         //String printString = "Title,Benjamin Links,Course\n";
         Element manifest = xmlDoc.select("manifest").first();
 
