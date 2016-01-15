@@ -6,8 +6,15 @@
 package courseauditor;
 
 import CourseCleaner.CourseCleaner;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.Scanner;
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,15 +33,39 @@ public class CourseAuditor {
      * @param args the command line arguments
      * @throws java.io.IOException
      */
-    public static void main(String[] args) throws IOException {
+    private static String printString;
+
+    public static void main(String[] args) throws IOException, ZipException {
         // Make reports folder
-        File reports = new File("Reports");
-        if (!reports.exists()) {
-            reports.mkdir();
+        //File reports = new File("Reports");
+        //if (!reports.exists()) {
+        //    reports.mkdir();
+        //}
+
+        //parseManifestAndRunCCT("Reports/Audit.csv");
+        //printDates("Reports/Dates.csv");
+        getZipsAndRunCourses();
+
+        //parseManifestAndRunCCT("Audit.csv", "B 211");
+    }
+
+    public static void getZipsAndRunCourses() throws IOException, ZipException {
+        printString = "Org Unit,Date,Title,HTML Title,Bad OUI,Calender Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        File curDur = new File(".");
+
+        File[] curDurFiles = curDur.listFiles();
+
+        for (File f : curDurFiles) {
+            if (f.isFile() && f.getName().endsWith(".zip")) {
+                ZipFile zf = new ZipFile(f);
+                File outFolder = new File(f.getName().replace(".zip", ""));
+                if (!outFolder.exists()) {
+                    outFolder.mkdir();
+                }
+                zf.extractAll(f.getName().replace(".zip", ""));
+                parseManifestAndRunCCT("Audit.csv", f.getName().replace(".zip", ""));
+            }
         }
-        parseManifestAndRunCCT("Reports/Audit.csv");
-        printDates("Reports/Dates.csv");
-       
     }
 
     public static void printDates(String resultname) throws IOException {
@@ -52,7 +83,6 @@ public class CourseAuditor {
                 printString += "\"" + title + "\"," + date_start + "," + date_end + "," + date_due + ",\n";
             }
         }
-
         try (PrintWriter out = new PrintWriter(resultname)) {
             out.print(printString);
         }
@@ -77,11 +107,10 @@ public class CourseAuditor {
                         File input = new File(fpath);
                         if (input.exists()) {
                             course.cleanDoc(fpath, title, orgunitid);
-                            Writer writer = new PrintWriter(fpath);
-                            writer.write(course.getfixedsource());
-                            writer.close();
+                            try (Writer writer = new PrintWriter(fpath)) {
+                                writer.write(course.getfixedsource());
+                            }
                         }
-
                     }
                 }
             }
@@ -93,14 +122,10 @@ public class CourseAuditor {
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Course Document Title,HTML Title,Wrong OrgUnitID,IL2 Links,Box Links,Benjamin Links,Empty Links,IL2 Images,CSS Bold,Potential Code Mistakes\n";
-        //String printString = "Title,Benjamin Links,Course\n";
-        Element manifest = xmlDoc.select("manifest").first();
 
+        Element manifest = xmlDoc.select("manifest").first();
         String title;
         String orgunitid = manifest.attr("identifier").substring(4);
-        //System.out.print("OrgUnitId: " + orgunitid);
-        //*
         String date_start, date_end, date_due;
         PageAuditorCI audit = new PageAuditorCI();
         for (Element e : resources) {
@@ -109,7 +134,6 @@ public class CourseAuditor {
                 String fpath = e.attr("href");
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
-                        //System.out.println(date_start + date_end + date_due);
                         title = d.child(0).ownText();
                         audit.audit(fpath, title, orgunitid);
                         printString += audit.getMetrics();
@@ -122,19 +146,14 @@ public class CourseAuditor {
         }
     }
 
-    public static void parseManifestAndRunCCT(String resultname) throws IOException {
-        String content = new Scanner(new File("imsmanifest.xml")).useDelimiter("\\Z").next();
+    public static void parseManifestAndRunCCT(String resultname, String path) throws IOException {
+        String content = new Scanner(new File(path + "/imsmanifest.xml")).useDelimiter("\\Z").next();
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements resources = xmlDoc.select("resource");
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,HTML Title,Bad OUI,Calender Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,Br,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
-        //String printString = "Title,Benjamin Links,Course\n";
         Element manifest = xmlDoc.select("manifest").first();
-
         String title;
         String orgunitid = manifest.attr("identifier").substring(4);
-        //System.out.print("OrgUnitId: " + orgunitid);
-        //*
         PageAuditorCCT audit = new PageAuditorCCT();
         for (Element e : resources) {
             String type = e.attr("d2l_2p0:material_type");
@@ -143,14 +162,15 @@ public class CourseAuditor {
                 for (Element d : items) {
                     if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
                         title = d.child(0).ownText();
-                        audit.audit(fpath, title, orgunitid);
+                        audit.audit(path + "/" + fpath, title, orgunitid);
                         printString += audit.getMetrics();
                     }
                 }
             }
         }
-        try (PrintWriter out = new PrintWriter(resultname)) {
+        try (PrintWriter out = new PrintWriter(new FileOutputStream(new File(resultname), true))) {
             out.print(printString);
         }
+        printString = "";
     }
 }

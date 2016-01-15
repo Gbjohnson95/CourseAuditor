@@ -7,6 +7,8 @@ package pageauditor;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
@@ -54,11 +56,13 @@ public class PageAuditorCCT {
      */
     public String getMetrics() {
         String printString
-                = docTitle + "," // Title
+                = oui + "," // Org Unit
+                + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + "," // Date String
+                + docTitle + "," // Title
                 + getHTMLTitle() + "," // HTML Title
                 + wrongcourselinks() + "," // Links pointing outside of course
                 + countCSSQuery("a[href*=/calendar/]") + "," // Calender links
-                + viewContent() + "," // Incorrect link type
+                + countCSSQuery("a[href*=/home/], a[href*=viewContent], a[href*=/calendar/]") + "," // Incorrect link type
                 + countCSSQuery("a[href*=brainhoney]") + "," // BH Links
                 + countCSSQuery("a[href*=box.com]") + "," // Box Links
                 + countCSSQuery("a[href*=courses.byui.edu]") + "," // Benjamin Links
@@ -68,9 +72,8 @@ public class PageAuditorCCT {
                 + numBadImageWidth() + "," // Image Width
                 + regexSearch("font-weight\\: bold") + "," // Bolds
                 + countCSSQuery("span") + "," // Spans
-                + (bs.size() + is.size()) + "," // Bad Tags
+                + countCSSQuery("b, i, br") + "," // Bad Tags
                 + countCSSQuery("div:not([id])") + "," // Divs
-                + countCSSQuery("br") + "," // Br
                 + regexSearch("\\$[A-Za-z]+\\S\\$") + "," // BHVars
                 + regexSearch("[sS]aturday") + "," // Mentions Saturday
                 + checkHeaders() + "," // Headers
@@ -99,10 +102,6 @@ public class PageAuditorCCT {
         } else {
             return "Bad: " + filepath;
         }
-    }
-
-    private String viewContent() {
-        return (doc.select("a[href*=/viewContent/]").size() + doc.select("a[href*=/home/]").size()) + "";
     }
 
     private String wrongcourselinks() {
