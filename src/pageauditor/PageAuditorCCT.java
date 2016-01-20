@@ -25,15 +25,17 @@ public class PageAuditorCCT {
 
     private Document doc;
     private Element body;
-    private String filepath, docTitle, htmlString, oui;
+    private String filepath, docTitle, htmlString, oui, link;
     private Elements bs, is, titleE;
 
-    public void audit(String filename, String dTitle, String orgunitid) throws IOException {
+    public void audit(String filename, String dTitle, String orgunitid, String id) throws IOException {
         File input = new File(filename);
         oui = orgunitid;
         if (input.exists()) {
             doc = Jsoup.parse(input, "UTF-8");
             body = doc.getElementsByTag("body").first();
+            
+            link = "https://byui.brightspace.com/d2l/le/content/" + oui + "/viewContent/"+ id +"/View";
 
             // Set elements for program
             is = body.getElementsByTag("i");
@@ -57,12 +59,12 @@ public class PageAuditorCCT {
     public String getMetrics() {
         String printString
                 = oui + "," // Org Unit
-                + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + "," // Date String
                 + docTitle + "," // Title
                 + getHTMLTitle() + "," // HTML Title
+                + countCSSQuery("a") + "," // All links on page
                 + wrongcourselinks() + "," // Links pointing outside of course
-                + countCSSQuery("a[href*=/calendar/]") + "," // Calender links
-                + countCSSQuery("a[href*=/home/], a[href*=viewContent], a[href*=/calendar/]") + "," // Incorrect link type
+                + countCSSQuery("a[href*=/quickLink/]") + "," // Calender links
+                + (countCSSQuery("a[href*=/home]") + countCSSQuery("a[href*=/viewContent]") + countCSSQuery("a[href*=/calendar]")) + "," // Non-Dynamic Links
                 + countCSSQuery("a[href*=brainhoney]") + "," // BH Links
                 + countCSSQuery("a[href*=box.com]") + "," // Box Links
                 + countCSSQuery("a[href*=courses.byui.edu]") + "," // Benjamin Links
@@ -78,12 +80,17 @@ public class PageAuditorCCT {
                 + regexSearch("[sS]aturday") + "," // Mentions Saturday
                 + checkHeaders() + "," // Headers
                 + getTemplateName() + "," // Template
+                + "\"" + link + "\"" + "," // Brightspace Link
                 + checkFilePath() + ",\n";  // File Path
         return printString;
     }
 
-    public String countCSSQuery(String query) {
-        return doc.select(query).size() + "";
+    public int countCSSQuery(String query) {
+        return body.select(query).size();
+    }
+    
+    public String fullyformed() {
+        return body.select("a[href*=/home], a[href*=/viewContent], a[href*=/calendar]").select("http").size() + "";
     }
 
     public String regexSearch(String regex) {

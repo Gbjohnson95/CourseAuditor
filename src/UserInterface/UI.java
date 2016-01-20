@@ -7,13 +7,18 @@ package UserInterface;
 
 import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXTabPane;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import sun.applet.Main;
 
 /**
  *
@@ -22,7 +27,8 @@ import javafx.stage.Stage;
 public class UI extends Application {
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws IOException {
+        //*
         JFXTabPane tabPane = new JFXTabPane();
         tabPane.setPrefSize(600, 800);
 
@@ -33,7 +39,9 @@ public class UI extends Application {
                 new JFXCheckBox("Button 1"),
                 new JFXCheckBox("Button 2"),
                 new JFXCheckBox("Button 3"));
-        
+        homeBox.setSpacing(30.0);
+        homeBox.setManaged(false);
+        homeBox.setLayoutY(10.0);
         homeTab.setContent(homeBox);
         
         tabPane.getTabs().add(homeTab);
@@ -56,6 +64,15 @@ public class UI extends Application {
         primaryStage.setTitle("Course Tool");
         primaryStage.setScene(scene);
         primaryStage.show();
+        /*/
+        
+            StackPane page = (StackPane) FXMLLoader.load(Main.class.getResource("FXML.fxml"));
+            Scene scene = new Scene(page);
+            primaryStage.setScene(scene);
+            primaryStage.setTitle("FXML is Simple");
+            primaryStage.show();
+        //*/
+        
     }
 
     /**

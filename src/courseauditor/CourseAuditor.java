@@ -44,13 +44,16 @@ public class CourseAuditor {
 
         //parseManifestAndRunCCT("Reports/Audit.csv");
         //printDates("Reports/Dates.csv");
-        getZipsAndRunCourses();
-
-        //parseManifestAndRunCCT("Audit.csv", "B 211");
+        //getZipsAndRunCourses();
+        long startTime = System.nanoTime();
+        RunCourses();
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;
+        System.out.println("Time to run: " + duration);
     }
 
     public static void getZipsAndRunCourses() throws IOException, ZipException {
-        printString = "Org Unit,Date,Title,HTML Title,Bad OUI,Calender Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
+        printString = "Org Unit,Date,Title,HTML Title,All Links,Bad OUI,Dynamic Links,Static IL3 Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,BHVars,Mentions Saturday,Header Order,Template,Filepath\n";
         File curDur = new File(".");
 
         File[] curDurFiles = curDur.listFiles();
@@ -68,11 +71,34 @@ public class CourseAuditor {
         }
     }
 
+    public static void RunCourses() throws IOException, ZipException {
+        printString = "Org Unit,Title,HTML Title,All Links,Bad OUI,Dynamic Links,Non-Dymanmic Links,BH Links,Box Links,Benjamin Links,Bad Link Targets,Empty Links,BH Images,Image Width,Bolds,Spans,Bad Tags,Divs,BHVars,Mentions Saturday,Header Order,Template,Link,Filepath\n";
+        File curDur = new File(".");
+        File[] curDurFiles = curDur.listFiles();
+        int numCourses = 0;
+        for (File g : curDurFiles) {
+            if (g.isDirectory()) {
+                numCourses++;
+            }
+        }
+        int curCourse = 0;
+        for (File f : curDurFiles) {
+            if (f.isDirectory()) {
+                File man = new File(f.getName() + "/imsmanifest.xml");
+                if (man.exists()) {
+                    parseManifestAndRunCCT("Audit.csv", f.getName());
+                    curCourse++;
+                    System.out.println("Completed #" + curCourse + "/" + numCourses);
+                }
+            }
+        }
+    }
+
     public static void printDates(String resultname) throws IOException {
         String content = new Scanner(new File("imsmanifest.xml")).useDelimiter("\\Z").next();
         Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
         Elements items = xmlDoc.getElementsByTag("item");
-        String printString = "Title,Start Date,End Date,Due Date,\n";
+        printString = "Title,Start Date,End Date,Due Date,\n";
         String date_start, date_end, date_due, title;
         for (Element d : items) {
             title = d.child(0).ownText();
@@ -147,30 +173,36 @@ public class CourseAuditor {
     }
 
     public static void parseManifestAndRunCCT(String resultname, String path) throws IOException {
-        String content = new Scanner(new File(path + "/imsmanifest.xml")).useDelimiter("\\Z").next();
-        Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
-        Elements resources = xmlDoc.select("resource");
-        Elements items = xmlDoc.getElementsByTag("item");
-        Element manifest = xmlDoc.select("manifest").first();
-        String title;
-        String orgunitid = manifest.attr("identifier").substring(4);
-        PageAuditorCCT audit = new PageAuditorCCT();
-        for (Element e : resources) {
-            String type = e.attr("d2l_2p0:material_type");
-            if ("content".equals(type)) {
-                String fpath = e.attr("href");
-                for (Element d : items) {
-                    if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
-                        title = d.child(0).ownText();
-                        audit.audit(path + "/" + fpath, title, orgunitid);
-                        printString += audit.getMetrics();
+        File manifestFile = new File(path + "/imsmanifest.xml");
+        if (manifestFile.exists()) {
+            String content = new Scanner(manifestFile).useDelimiter("\\Z").next();
+            Document xmlDoc = Jsoup.parse(content, "", Parser.xmlParser());
+            Elements resources = xmlDoc.select("resource");
+            Elements items = xmlDoc.getElementsByTag("item");
+            Element manifest = xmlDoc.select("manifest").first();
+            String title, ident;
+            String orgunitid = manifest.attr("identifier").substring(4);
+            PageAuditorCCT audit = new PageAuditorCCT();
+            for (Element e : resources) {
+                if ("content".equals(e.attr("d2l_2p0:material_type"))) {
+                    String fpath = e.attr("href");
+                    for (Element d : items) {
+                        if (d.hasAttr("identifierref") && (d.attr("identifierref").equals(e.attr("identifier")) && fpath.contains(".html"))) {
+                            title = d.child(0).ownText();
+                            ident = d.attr("identifier");
+                            //System.out.println("Audited: " + path + "/" + fpath);
+                            audit.audit(path + "/" + fpath, title, orgunitid, ident);
+                            printString += audit.getMetrics();
+                        }
                     }
                 }
             }
+            try (PrintWriter out = new PrintWriter(new FileOutputStream(new File(resultname), true))) {
+                out.print(printString);
+                printString = "";
+            }
+        } else {
+            System.out.println("Could not find manifest of folder: " + path);
         }
-        try (PrintWriter out = new PrintWriter(new FileOutputStream(new File(resultname), true))) {
-            out.print(printString);
-        }
-        printString = "";
     }
 }
